@@ -7,7 +7,9 @@
 set -e
 HERE=$(cd "$(dirname "$0")" && pwd); ROOT=$(dirname "$HERE")
 JA=$HOME/.agents/skills/javascript-animation/scripts; ST=$HOME/.agents/skills/soundtrack/scripts
-export PATH=$HOME/.local/node/bin:$PATH
+[ -d "$HOME/.local/node/bin" ] && export PATH=$HOME/.local/node/bin:$PATH
+# node scripts resolve playwright from the working directory: prefer this repo's node_modules, else ~
+RUN=$HOME; [ -d "$ROOT/node_modules/playwright-core" ] && RUN=$ROOT
 cmd=$1; shift || true
 case "$cmd" in
   new)
@@ -20,7 +22,7 @@ case "$cmd" in
     echo "$d" ;;
   check)
     d=$(cd "$1" && pwd); sh "$HERE/build.sh" "$d" >/dev/null
-    cd "$HOME"
+    cd "$RUN"
     node "$JA/render.mjs" "$d/piece.html" "$d/qc/sheet.jpg" --sheet "${2:-1.5}" | tail -1
     node "$JA/asset-audit.mjs" "$d/piece.html" | tail -1
     s=0
@@ -28,10 +30,10 @@ case "$cmd" in
     node "$HERE/check.mjs" "$d/piece.html" || s=1
     exit $s ;;
   stills)
-    d=$(cd "$1" && pwd); sh "$HERE/build.sh" "$d" >/dev/null; cd "$HOME"
+    d=$(cd "$1" && pwd); sh "$HERE/build.sh" "$d" >/dev/null; cd "$RUN"
     node "$JA/render.mjs" "$d/piece.html" "$d/qc/still" --stills "$2" ;;
   render)
-    d=$(cd "$1" && pwd); slug=$(basename "$d"); sh "$HERE/build.sh" "$d" >/dev/null; cd "$HOME"
+    d=$(cd "$1" && pwd); slug=$(basename "$d"); sh "$HERE/build.sh" "$d" >/dev/null; cd "$RUN"
     node "$JA/render.mjs" "$d/piece.html" "$d/$slug.mp4" | tail -3
     node "$ST/sync-check.mjs" "$d/$slug.mp4" --cues-file "$d/$slug.cues.json" | tail -12 ;;
   *) sed -n '2,7p' "$0"; exit 1 ;;

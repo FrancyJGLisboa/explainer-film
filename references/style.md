@@ -31,7 +31,7 @@ Numbers on screen come from the brief's sources. Illustrative data is labelled a
 - **Colour is meaning:** each quantity gets one VAR colour, and the symbol, the object and the word all share it. Tie words to objects with `{word|#hex}`.
 - **Transform, don't replace.** When a representation changes (dots → bar → curve, circle → star), morph it (`morph`, `SHAPE.*`), or move the thread dot from one to the next.
 - Build intuition before the formula: show the behaviour first, then name it with an equation.
-- Calm camera: slow pushes, and zoom in when a detail matters (like the chest-panel zoom in how-ai-learns).
+- Calm camera: slow pushes, and zoom in when a detail matters (like the chest-panel zoom in examples/how-ai-learns).
 
 ## Anti-"AI video" rules (enforced by check.mjs where it can)
 1. No text in corners, no frames or borders, no corner logos.

@@ -9,7 +9,7 @@ The user gives one of two things: a **hunch** ("why compound interest feels slow
 (pasted, or a file path). They get back an MP4 that has passed every check. Everything below runs without asking the user anything.
 
 Tools: `scripts/film.sh` (this folder). The parts kit is `kit/kit.js`. The style rules are `references/style.md`; read them once per film.
-The worked example is `~/projects/how-ai-learns` (src/scenes.js), which was made before this kit existed and shows the same patterns.
+The worked example is `examples/how-ai-learns/` (src/scenes.js), which was made before this kit existed and shows the same patterns.
 
 ## Defaults (change only when the user's words say so)
 - 45 s, 16:9 1920×1080, 60 fps, music only (no narrator), in the language of the input.

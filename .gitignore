@@ -1,0 +1,7 @@
+node_modules/
+*.mp4
+*.wav
+*.cues.json
+piece.html
+qc/
+.DS_Store
