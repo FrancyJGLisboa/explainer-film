@@ -30,19 +30,19 @@ const ZONE = (() => {
     head: { x: SAFE.x0 + sw * .38, y: SAFE.y0 + 100 * U, w: sw * .6 },
     visual: { x: SAFE.x0 + sw * .4, y: SAFE.y0 + 190 * U, w: sw * .58, h: sh * .66 },
     hero: { x: SAFE.x0 + sw * .12, y: SAFE.y1 - 20 * U, s: .85 * U },
-    caption: { x: W / 2, y: SAFE.y1 - 40 * U, w: sw * .7 },
+    caption: { x: W / 2 + 60 * U, y: SAFE.y1 - 45 * U, w: sw * .56 },
   };
   if (H / W > 1.5) return {                                             // tall (9:16): headline top, big visual middle, captions, hero small below
     head: { x: SAFE.x0 + 10 * U, y: SAFE.y0 + 110 * U, w: sw - 20 * U },
     visual: { x: SAFE.x0 + 40 * U, y: SAFE.y0 + 330 * U, w: sw - 80 * U, h: sh * .52 },
-    hero: { x: SAFE.x0 + 130 * U, y: SAFE.y1 - 10 * U, s: .55 * U },
-    caption: { x: (SAFE.x0 + SAFE.x1) / 2, y: SAFE.y1 - 60 * U, w: sw - 300 * U },
+    hero: { x: SAFE.x1 - 120 * U, y: SAFE.y1 - 10 * U, s: .55 * U },                           // bottom-right, inside the safe zone
+    caption: { x: SAFE.x0 + (sw - 250 * U) / 2, y: SAFE.y1 - 70 * U, w: sw - 290 * U },          // beside the hero, never over it
   };
   return {                                                              // square / 4:5 feed
     head: { x: SAFE.x0 + 10 * U, y: SAFE.y0 + 90 * U, w: sw - 20 * U },
     visual: { x: SAFE.x0 + 250 * U, y: SAFE.y0 + 190 * U, w: sw - 290 * U, h: sh * .6 },
     hero: { x: SAFE.x0 + 110 * U, y: SAFE.y1 - 10 * U, s: .55 * U },
-    caption: { x: (SAFE.x0 + SAFE.x1) / 2, y: SAFE.y1 - 40 * U, w: sw - 40 * U },
+    caption: { x: SAFE.x0 + 230 * U + (sw - 230 * U) / 2, y: SAFE.y1 - 45 * U, w: sw - 270 * U },
   };
 })();
 
@@ -91,7 +91,7 @@ function kine(str, x, y, t, at, out, o = {}) {
       ctx.restore(); let best = 1, bd = 1e9;
       for (let k = 1; k < parts.length; k++) { const a2 = parts.slice(0, k).join(' ').length, b2 = parts.slice(k).join(' ').length; if (Math.abs(a2 - b2) < bd) { bd = Math.abs(a2 - b2); best = k; } }
       const o2 = { ...o, _wrapped: true, id: id }; kine(parts.slice(0, best).join(' '), x, y, t, at, out, { ...o2, id: id + ' (1)' });
-      kine(parts.slice(best).join(' '), x, y + size * 1.12, t, at + .12, out, { ...o2, id: id + ' (2)' }); WORD_LOG.add(str); return;
+      kine(parts.slice(best).join(' '), x, y + size * 1.24, t, at + .12, out, { ...o2, id: id + ' (2)' }); WORD_LOG.add(str); return;
     }
     if (tw > room && room > 0) { size = Math.floor(size * room / tw); ctx.font = SANS(size, w); } }   // a little too long: shrink to fit the safe zone
   if (/[{}|]/.test(str.replace(/\{[^{}|]+\|#[0-9a-fA-F]{3,8}\}/g, '')) && !CHECKS.some(c => c.includes(str))) CHECKS.push(`markup: "${str}" would show raw { } or | on screen; colour words as {word|#hex}`);
@@ -461,6 +461,34 @@ function voiceLevel(t) {                          // 0..1 loudness of the narrat
   const v = VO.find(l => t >= l.at && t <= l.to); if (!v || !v.env) return 0;
   const i = (t - v.at) * 30, a = v.env[Math.floor(i)] ?? 0, c = v.env[Math.floor(i) + 1] ?? 0; return lerp(a, c, i % 1);
 }
+// captions: narrated films burn in the spoken words (most social video is watched muted). Word times are estimated:
+// each word gets a share of its line's duration by its length. Shown 3-4 words at a time, the current word highlighted.
+let CAPS = null;
+function captionChunks() {
+  if (CAPS) return CAPS; CAPS = [];
+  for (const v of VO) {
+    const ws = v.text.split(/\s+/).filter(Boolean), wt = ws.map(w => w.replace(/[^\p{L}\p{N}]/gu, '').length + 1.5), tot = wt.reduce((a, c) => a + c, 0);
+    let t0 = v.at, chunk = [];
+    ws.forEach((w, i) => { const d = (v.to - v.at) * wt[i] / tot; chunk.push({ w, at: t0, to: t0 + d }); t0 += d;
+      if (chunk.length >= 4 || /[.,;:!?…]$/.test(w) && chunk.length >= 2 || i === ws.length - 1) { CAPS.push({ words: chunk, at: chunk[0].at, to: chunk[chunk.length - 1].to }); chunk = []; } });
+  }
+  return CAPS;
+}
+function captions(t) {
+  if (!VO.length || LOOK.captions === false) return;
+  const c = captionChunks().find(c => t >= c.at && t < c.to + .15); if (!c) return;
+  const size = (LOOK.captionSize ?? 46) * U, Z = ZONE.caption;
+  ctx.save(); ctx.font = SANS(size, 800); ctx.textBaseline = 'middle';
+  const sp = ctx.measureText(' ').width, ws = c.words.map(o => ctx.measureText(o.w).width), total = ws.reduce((a, b2) => a + b2, 0) + sp * (ws.length - 1);
+  const k = Math.min(1, Z.w / total); if (k < 1) { ctx.font = SANS(size * k, 800); }
+  const tw = total * k, x0 = Z.x - tw / 2, pad = 18 * U, h = size * k * 1.5;
+  if (!HIDE_WORDS) {
+    ctx.fillStyle = 'rgba(8,12,26,.72)'; ctx.beginPath(); ctx.roundRect(x0 - pad, Z.y - h / 2, tw + pad * 2, h, h / 2); ctx.fill();
+    let x = x0; c.words.forEach((o, i) => { ctx.fillStyle = t >= o.at && t < o.to ? VAR.yellow : TEXT; ctx.fillText(o.w, x, Z.y + 2); x += (ws[i] + sp) * k; });
+  }
+  ctx.restore();
+  claimText('caption', x0 - pad, Z.y - h / 2, tw + pad * 2, h, TEXT, true);
+}
 function speaking(t) { return VO.some(v => t >= v.at && t <= v.to); }   // e.g. a character's mouth moves while this is true
 
 // ---------- frame ----------
@@ -474,6 +502,7 @@ function frameAt(frame) {
   withCamera(cam, () => world(t));
   if (LOOK.grain !== 0 && !HIDE_BACKDROP) grain(LOOK.grain ?? .06);
   words(t);
+  captions(t);
   window.LAYOUT = LAYOUT;
 }
 function finish() {                               // call once at the end of scenes.js

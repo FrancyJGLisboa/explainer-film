@@ -21,7 +21,7 @@ const SHOTS = [                                                    // one camera
   { from: SC.limits.from, to: DUR, cam: () => still },
 ];
 const EVENTS = [                                                   // [seconds, sfx]: one per visible action, on beats
-  [b(1), 'boing'], ...[0, 1, 2, 3, 4, 5].map(g => [b(1.5 + g * .5), 'pop']), [SC.naive.from, 'whoosh'], ...[0, 1, 2, 3, 4, 5, 6, 7].map(i => [b(8 + i * .5), 'popLow', i % 4]),
+  [b(1), 'boing'], ...[0, 1, 2, 3, 4].map(g => [b(.4 + g * .4), 'pop']), [SC.naive.from, 'whoosh'], ...[0, 1, 2, 3, 4, 5, 6, 7].map(i => [b(8 + i * .5), 'popLow', i % 4]),
   [SC.mechanism.from, 'swish'], [b(19), 'zip'], [SC.build.from, 'swish'], [b(31), 'tick'], [b(36), 'ding'],
   [SC.insight.from, 'whoosh'], [b(45), 'flag'], [SC.limits.from, 'swish'], [b(55), 'clonk'], [SC.loop.from, 'whooshOut'], [b(66), 'notify'],
 ];
@@ -59,7 +59,7 @@ function world(t) {
   // hook: rows of dots, each row the last one doubled (1, 2, 4, 8, 16): a still frame already shows "doubling"
   if (t < SC.naive.from + 1) {
     const out = ease(prog(t, SC.naive.from, SC.naive.from + .8)), gap = Math.min(60 * U, V.w / 16.5), rowH = V.h / 5.2;
-    ROWS.forEach((n, g) => { const p = back(prog(t, b(1.5 + g * .5), b(1.9 + g * .5)));
+    ROWS.forEach((n, g) => { const p = back(prog(t, b(.4 + g * .4), b(.8 + g * .4)));   // all rows up by 1.3 s: feeds decide fast
       for (let k = 0; k < n; k++) if (p > 0) circ(V.x + V.w / 2 + (k - (n - 1) / 2) * gap, V.y + rowH * (g + .5) + out * H, gap * .4 * p, VAR.yellow); });
   }
   // naive -> mechanism: the same bars, re-grown by a different rule (morph, not a cut)
@@ -113,7 +113,7 @@ function world(t) {
 // ---------- words: in the headline band (ZONE.head), never across the visual; kine shrinks a line to fit the safe zone ----------
 function words(t) {
   const hx = ZONE.head.x, hy = ZONE.head.y, S = 72 * U;
-  kine('What grows {slow,|#8d9bbd} then {sudden?|#f4d35e}', hx, hy, t, b(2), b(5.6), { size: 88 * U });
+  kine('What grows {slow,|#8d9bbd} then {sudden?|#f4d35e}', hx, hy, t, b(.6), b(5.6), { size: 88 * U });
   kine('Add the {same|#58c4dd} each step.', hx, hy, t, b(6.6), b(15.6), { size: S });
   kine('Grow by a {share|#f4d35e} of itself.', hx, hy, t, b(16.6), b(27.6), { size: S });
   eq([['s', VAR.yellow], [' = 3 · '], ['1.35', VAR.yellow], ['^t', MUTED]], hx, hy + 10 * U, t, b(29), b(41.6), { size: 84 * U });

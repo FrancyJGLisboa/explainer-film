@@ -30,6 +30,7 @@ Music layers: pad, pluck, hat8, kick2, kick4, bassHalf, clap. Harmonies: bright,
 | call | notes |
 |---|---|
 | `said(scene, i=0)` | `{at, to}`: when line i of that scene is spoken. Use it to time visuals and words to the voice |
+| captions | automatic for narrated films (`ZONE.caption`); `LOOK.captions = false` turns them off, `LOOK.captionSize` sets the size (default 46·U) |
 | `speaking(t)` | true while any line is playing (e.g. `mood` / `squash` on the hero) |
 | `NARRATION` | the timing.json (null for a music-only film). `finish()` fails the check if a line overruns its scene |
 

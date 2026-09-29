@@ -65,6 +65,13 @@ const res = await page.evaluate(EVERY => {
       else if (n && art / n > .008) (out.over[key] ||= []).push(ts);
     }
   }
+  // hook: by 1.5 s the viewer must see words AND the explanation starting (scrolling feeds decide in about a second)
+  { const f = Math.round(1.5 * window.FPS); if (window.setHideHero) window.setHideHero(true); if (window.setHideBackdrop) window.setHideBackdrop(true);
+    window.draw(f); const d = x.getImageData(0, 0, W, H).data; let occ = new Set();
+    for (let y = 0; y < H; y += 3) for (let xx = 0; xx < W; xx += 3) if (isArt(d, (y * W + xx) * 4)) occ.add(Math.floor(y / 40) * 1000 + Math.floor(xx / 40));
+    const words = (window.LAYOUT || []).filter(L => L.kind === 'text').length, fill = occ.size / (Math.ceil(W / 40) * Math.ceil(H / 40));
+    if (window.setHideHero) window.setHideHero(false); if (window.setHideBackdrop) window.setHideBackdrop(false);
+    out.hook = { words, fill }; }
   window.setHideWords(false);
   out.allWords = window.getWords();
   out.words = out.allWords.filter(s => s.split(' ').length > 8);
@@ -82,6 +89,7 @@ await browser.close();
 const span = ts => ts.length > 1 ? `${ts[0]}-${ts[ts.length - 1]}s` : `${ts[0]}s`;
 const fails = [];
 res.checks.forEach(c => fails.push(`storyboard: ${c}`));
+if (res.hook && (res.hook.words === 0 || res.hook.fill < .01)) fails.push(`hook: at 1.5 s the viewer sees ${res.hook.words ? '' : 'no words'}${!res.hook.words && res.hook.fill < .01 ? ' and ' : ''}${res.hook.fill < .01 ? 'almost nothing of the explanation' : ''}; social feeds decide in about a second: put the question on screen and start the picture by 1.5 s`);
 if (score) fails.push(`sound: ${score}`);
 Object.entries(res.low).forEach(([k, ts]) => fails.push(`contrast: "${k}" is hard to read against what is behind it at ${span(ts)}`));
 Object.entries(res.corner).forEach(([k, ts]) => fails.push(`corner: "${k}" sits in a corner at ${span(ts)}`));

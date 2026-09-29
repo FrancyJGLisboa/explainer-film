@@ -41,6 +41,11 @@ the checks until they pass. Then it renders the MP4 and checks that the music la
 - **Real maths:** LaTeX typeset at build time (MathJax → glyph outlines, nothing loaded at runtime). It's written on stroke-then-fill, and equations morph into each other with matching symbols travelling.
 - **Long films:** 2–5 minute films in chapters. Each chapter is checked on its own and must keep the shared look; changed chapters re-render and everything joins into one MP4.
 
+## Made for feeds
+- **Every platform:** `tiktok`, `reels`, `shorts`, `instagram` (4:5), `linkedin` (4:5), `square`, `youtube`, `x`. Each gets the right canvas and a safe zone clear of the app's own buttons and captions, and the layout adapts, so one film design works in 9:16, 1:1, 4:5 and 16:9.
+- **Works muted:** narrated films get burned-in captions, word by word.
+- **Hook:** the check fails a film that hasn't shown its question and started its picture by 1.5 s.
+
 ## Narration, free and local
 Say "narrated" or "with an ASMR voice" and the film gets a voice-over from [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M)
 (Apache 2.0, runs on your machine, no account, no API key): `af_heart` (soft, natural), `af_nicole` (whispery ASMR),

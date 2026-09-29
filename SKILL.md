@@ -58,6 +58,7 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
   - Keep the same claims discipline as the brief.
 - Narration makes films longer: 45 s of pictures with a voice usually needs 80–90 beats (50–56 s). Set DUR = beats × BEAT exactly (the check prints the value).
 - Run `film.sh voice <dir>`. The first use installs Kokoro (about 350 MB, once). It prints the beats each scene needs; set the `SC` beats to at least that, and set DUR to beats × BEAT.
+- Narrated films get **burned-in captions automatically** (most social video is watched muted): 3–4 words at a time in `ZONE.caption`, the current word highlighted. Set `LOOK.captions = false` only if the user asks for no captions.
 - In scenes.js, time visuals to the voice with `said('scene').at / .to`, and use `speaking(t)` to animate a character while the voice talks.
 - `film.sh check` fails if a line runs past its scene. `film.sh render` mixes the voice in, lowers the music under it and normalises loudness to −16 LUFS. It keeps `<slug>.music-only.mp4` too.
 
@@ -73,6 +74,7 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
 - `shows(label, condition)` for every reality-map test. Draw from the same functions you test (the template's `lin`/`expo`/`logi`). `film.sh check` rejects constant conditions (`true`) and conditions that use nothing `world()` draws: "checked visually" is not a test.
 - Don't game the checks: shrinking the explanation while text shows, parking words at the frame edge, or blowing up the hero to fill the frame are failures of the film even if a check passes. Frame fill is measured with the hero hidden: the explanation itself must fill the frame.
 - `fits(label, start, end, SC.x.from, SC.x.to)` for every timed list (montages, staggered items). This catches actions that overrun their scene.
+- **Hook** (checked): by 1.5 s the question or claim is on screen and the picture has started. Feeds decide in about a second, so no slow intros, logos or titles first.
 - **Composition** (checked by frame fill):
   - 16:9: hero on the left third at s ≥ 1.1, on its DISC; the main visual fills the right two thirds (about x 780–1820, y 250–900).
   - Words go in the empty band above or below the visual, never across it.
