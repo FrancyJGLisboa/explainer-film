@@ -46,7 +46,7 @@ Numbers on screen come from the brief's sources. Illustrative data is labelled a
 ## Composition (checked by frame fill)
 - 16:9: hero on the left third (s ≥ 1.1) on its DISC; the main visual fills the right two thirds; words in the empty band above or below it.
 - 9:16: hero in the top third, visual in the middle, words at the bottom.
-- With the hero and the backdrop hidden, the explanation must fill at least 10% of the frame (40 px cells with anything drawn in them). A small graph floating in empty space fails, and so does a giant hero standing in for a missing diagram.
+- With the hero and the backdrop hidden, strong marks of the explanation must cover at least 8% of the frame (40 px cells; faint wallpaper doesn't count). A small graph floating in empty space fails, and so does a giant hero standing in for a missing diagram.
 - The last scene keeps the story's object on screen. It never ends on a bare character.
 
 ## Palette guide

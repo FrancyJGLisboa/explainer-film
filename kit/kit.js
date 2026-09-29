@@ -46,6 +46,7 @@ function kine(str, x, y, t, at, out, o = {}) {
   WORD_LOG.add(str);
   if (t < at || t > out + 1) return;
   ctx.save(); ctx.font = SANS(size, w); ctx.textBaseline = 'alphabetic';
+  if (/[{}|]/.test(str.replace(/\{[^{}|]+\|#[0-9a-fA-F]{3,8}\}/g, '')) && !CHECKS.some(c => c.includes(str))) CHECKS.push(`markup: "${str}" would show raw { } or | on screen; colour words as {word|#hex}`);
   const toks = str.split(' ').map(s => { const m = s.match(/^\{(.+)\|(#[0-9a-fA-F]{3,8})\}(.*)$/); return m ? { s: m[1] + m[3], c: m[2] } : { s: s.replace(/\*/g, ''), c: s.includes('*') ? THREAD : col }; });
   const sp = ctx.measureText(' ').width, ws = toks.map(k => ctx.measureText(k.s).width), total = ws.reduce((a, c) => a + c, 0) + sp * (toks.length - 1);
   let x0 = align === 'center' ? x - total / 2 : align === 'right' ? x - total : x; const left = x0;

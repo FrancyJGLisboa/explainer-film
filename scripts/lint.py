@@ -35,9 +35,11 @@ for mm in re.finditer(r"\bshows\s*\(", code):
     args = top_args(balanced(code, mm.end() - 1))
     if len(args) < 2: continue
     label, cond = args[0], args[1]
-    ids = set(re.findall(r"[A-Za-z_]\w*", re.sub(r"(['\"`]).*?\1", "", cond))) - GENERIC
+    bare = re.sub(r"(['\"`]).*?\1", "", cond)
+    bare = re.sub(r"\bSC\.\w+(\.\w+)?", "", bare)      # scene timings are not the picture
+    ids = set(re.findall(r"[A-Za-z_]\w*", bare)) - GENERIC
     if re.fullmatch(r"!*\s*(true|false|\d+(\.\d+)?)", cond.strip()) or not ids:
-        bad.append(f"{label}: condition `{cond}` is a constant")
+        bad.append(f"{label}: condition `{cond}` is a constant (or only scene timings, which say nothing about the picture)")
     elif not ids & world_ids:
         bad.append(f"{label}: condition `{cond}` uses nothing that world() draws ({', '.join(sorted(ids))})")
 if bad:

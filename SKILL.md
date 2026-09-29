@@ -85,7 +85,7 @@ Kit parts:
 - corners and off-frame text
 - overruns (`fits`), claims (`shows`) and storyboard/music coverage
 - lines over 8 words
-- frame fill (with the hero hidden, the explanation fills at least 10% of the frame)
+- frame fill (with the hero hidden, strong marks of the explanation cover at least 8% of the frame; faint wallpaper doesn't count)
 
 Then open `qc/sheet.jpg` and answer this in writing, scene by scene, fixing every "no":
 1. Does the picture show what the words say? (If the words say "explodes", does the curve visibly explode?)
