@@ -60,8 +60,9 @@ function fits(label, start, end, lo, hi) {        // assert an action [start, en
 }
 let HIDE_WORDS = false, HIDE_BACKDROP = false, HIDE_HERO = false;   // qc toggles these (fill is measured without backdrop and hero)                           // qc sets this to read what is behind the words
 const WORD_LOG = new Set();                       // every headline string used (qc checks length)
-function claimText(id, x, y, w, h, col, own = false) { claim(id, 'text', x, y, w, h); const L = LAYOUT[LAYOUT.length - 1]; L.col = col; L.own = own; }
+function claimText(id, x, y, w, h, col, own = false, bg = null) { claim(id, 'text', x, y, w, h); const L = LAYOUT[LAYOUT.length - 1]; L.col = col; L.own = own; L.bg = bg; }
 
+function hexOf2(c) { if (c[0] === '#') return c.length === 4 ? '#' + [...c.slice(1)].map(h => h + h).join('') : c.slice(0, 7); const m = c.match(/\d+(\.\d+)?/g).slice(0, 3).map(v => Math.round(+v)); return '#' + m.map(v => v.toString(16).padStart(2, '0')).join(''); }
 // ---------- flat shapes ----------
 // a colour that doesn't exist (VAR.gray, a typo, null) makes the canvas silently reuse the last colour: fail loudly instead
 function okCol(col, fn) {
@@ -119,14 +120,20 @@ function kine(str, x, y, t, at, out, o = {}) {
 }
 function pill(str, x, y, p, o = {}) {             // small label on its own background; springs open from its centre
   if (p <= 0) return;
-  const { bg = THREAD, fg = DEEP, size = 28, font = MONO(size, 700), align = 'left', id = null } = o;
+  let { bg = THREAD, size = 28, font = MONO(size, 700), align = 'left', id = null } = o;
+  let fg = o.fg ?? o.col;                          // 'col' accepted as an alias
+  const mk = String(str).match(/^\{(.+)\|(#[0-9a-fA-F]{3,8})\}$/); str = mk ? mk[1] : String(str).replace(/\*/g, '');   // {word|#hex} markup: the colour becomes the text colour
+  if (mk && fg == null) fg = mk[2];
+  const lumOf = c => { const [r, g2, b3] = rgbOf(hexOf2(c)).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * r + .7152 * g2 + .0722 * b3; };
+  const ratio = (a, c) => { const x = lumOf(a), y2 = lumOf(c); return (Math.max(x, y2) + .05) / (Math.min(x, y2) + .05); };
+  if (fg == null || ratio(fg, bg) < 3) fg = ratio(TEXT, bg) >= ratio(DEEP, bg) ? TEXT : DEEP;   // always readable on its own box
   ctx.save(); ctx.font = font; const w = ctx.measureText(str).width + size * 1.4, h = size * 1.8;
   const x0 = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
   ctx.translate(x0 + w / 2, y); ctx.scale(back(p), back(p));
   ctx.fillStyle = bg; ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, h / 2); ctx.fill();
   if (!HIDE_WORDS) { ctx.fillStyle = fg; ctx.textBaseline = 'middle'; ctx.textAlign = 'center'; ctx.fillText(str, 0, 1); }
   ctx.restore();
-  if (id && p > .9) claimText(id, x0, y - h / 2, w, h, fg, true);
+  if (id && p > .9) claimText(id, x0, y - h / 2, w, h, fg, true, bg);
 }
 function callout(str, px, py, lx, ly, p, o = {}) {   // a label in empty space (lx, ly) with a leader line to the point it names (px, py)
   if (p <= 0) return;

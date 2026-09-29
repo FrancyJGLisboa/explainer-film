@@ -55,6 +55,8 @@ const res = await page.evaluate(EVERY => {
       if (!onScreen) continue;
       if (L.x < -2 || L.y < -2 || L.x + L.w > W + 2 || L.y + L.h > H + 2) (out.off[key] ||= []).push(ts);
       else if (L.x < S.x0 - 2 || L.y < S.y0 - 2 || L.x + L.w > S.x1 + 2 || L.y + L.h > S.y1 + 2) (out.unsafe[key] ||= []).push(ts);
+      if (L.own && L.bg && L.col && L.bg.startsWith('#') && L.col.startsWith('#')) { const [a1, a2, a3] = hex(L.col), [b1, b2, b3] = hex(L.bg), la = lum(a1, a2, a3), lb = lum(b1, b2, b3);
+        if ((Math.max(la, lb) + .05) / (Math.min(la, lb) + .05) < 3) (out.low[key] ||= []).push(ts); continue; }
       if (L.own || !L.col || !L.col.startsWith('#')) continue;
       const [r0, g0, b0] = hex(L.col), lt = lum(r0, g0, b0);
       const bx = Math.max(0, Math.floor(L.x)), by = Math.max(0, Math.floor(L.y)), bw = Math.min(W - bx, Math.ceil(L.w)), bh = Math.min(H - by, Math.ceil(L.h));
