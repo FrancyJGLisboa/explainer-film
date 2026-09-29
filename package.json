@@ -1,0 +1,10 @@
+{
+  "name": "explainer-film",
+  "private": true,
+  "type": "module",
+  "description": "Build-time helpers for the explainer-film skill (LaTeX to shapes, headless checks).",
+  "dependencies": {
+    "mathjax-full": "^3.2.2",
+    "playwright-core": "^1.48.0"
+  }
+}

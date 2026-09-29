@@ -24,6 +24,27 @@ Music layers: pad, pluck, hat8, kick2, kick4, bassHalf, clap. Harmonies: bright,
 | `speaking(t)` | true while any line is playing (e.g. `mood` / `squash` on the hero) |
 | `NARRATION` | the timing.json (null for a music-only film). `finish()` fails the check if a line overruns its scene |
 
+## Worlds (backdrops; define `backdrop(t, cam)` in scenes.js)
+| call | notes |
+|---|---|
+| `WORLD.landscape / space / city / ocean / micro(t, cam, o?)` | ready-made environments with parallax depth. `o` overrides colours (e.g. `{sunCol}`, `{planetCol}`, `{cellCol}`) |
+| `parallax(cam, depth, fn)` | draw your own layer: depth 0 is fixed, 1 moves with the world |
+| `ridge`, `sunDisc`, `cloudsLayer`, `starsLayer`, `planet`, `skylineLayer`, `wavesLayer`, `membrane` | building blocks for custom worlds |
+| `mixHex(a, b, k)`, `AIR`, `NIGHTFALL` | lighten toward blue air or darken toward night (never toward grey) |
+| `LOOK.grain` | film-grain strength (default .06; 0 turns it off) |
+
+## Maths typesetting (src/tex.json → typeset at build time)
+| call | notes |
+|---|---|
+| `tex(key, x, y, t, at, out, {size=80, align, col})` | real LaTeX, drawn on glyph by glyph (outline, then fill). `y` is the vertical centre |
+| `texMorph(a, b, x, y, p, {size, align})` | glyphs shared by both equations travel to their new places; the rest shrink out or grow in |
+| `texBox(key, size)` | `{w, h}` for layout |
+
+## Chapters
+| call | notes |
+|---|---|
+| `chapterCard(n, title, t, at, out)` | a big number in a THREAD disc, plus the title |
+
 ## Words (screen space, inside `words(t)`)
 | call | notes |
 |---|---|
@@ -50,7 +71,8 @@ Music layers: pad, pluck, hat8, kick2, kick4, bassHalf, clap. Harmonies: bright,
 ## Kurzgesagt parts (world space, inside `world(t)`)
 | call | notes |
 |---|---|
-| `blob(x, y, s, st)` | round creature standing on (x, y), about 300·s tall |
+| `blob(x, y, s, st)` | round creature standing on (x, y), about 300·s tall. Extra state: `walk` (step phase, e.g. `t * 2`), `talk` (0..1, `voiceLevel(t)`), `waveR` (pass `t`), moods surprised/worried/excited with brows |
+| `crowd(x, y, w, h, n, t, {mark, markCol, cols, p})` | n small creatures; `mark` of them in `markCol` at scattered positions (a true proportion) |
 | `robot(x, y, s, st)` | Bit, about 530·s tall. Extra state: `dials[5]` (−1..1), `meter` (0..1), `dialGlow`, `antenna`, `eyeR` |
 | state `st` | `grow` (0..1, use `back`), `mood` plain\|happy\|sad\|think, `look` −1..1, `blink` (`blinkAt(t)`), `tilt`, `squash`, `armL`/`armR` (0 is down, about 2.4 is up), `winkR`, `body` colour |
 | `card(x, y, s, pic, {face, rot, blur, mark:'ok'\|'no', markP})` | a 260×320 card. `pic()` draws centred on 0,0. `face` 0→1 flips it over |

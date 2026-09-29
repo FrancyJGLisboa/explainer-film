@@ -35,6 +35,12 @@ Just ask your agent:
 The agent writes a brief (core idea, reality map, claims with sources, beats), codes the scenes with the kit, and runs
 the checks until they pass. Then it renders the MP4 and checks that the music lands on the cuts without sudden jumps in loudness.
 
+## What's in the kit
+- **Worlds:** landscape, space, city, ocean and microscopic backdrops, with parallax depth, soft light and film grain.
+- **Characters:** a round hero with seven moods, eyebrows, a walk cycle, waving, and lip-sync driven by the voice's real loudness. Crowds show "k out of n" as actual creatures.
+- **Real maths:** LaTeX typeset at build time (MathJax → glyph outlines, nothing loaded at runtime). It's written on stroke-then-fill, and equations morph into each other with matching symbols travelling.
+- **Long films:** 2–5 minute films in chapters. Each chapter is checked on its own and must keep the shared look; changed chapters re-render and everything joins into one MP4.
+
 ## Narration, free and local
 Say "narrated" or "with an ASMR voice" and the film gets a voice-over from [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M)
 (Apache 2.0, runs on your machine, no account, no API key): `af_heart` (soft, natural), `af_nicole` (whispery ASMR),
@@ -61,7 +67,7 @@ Requirements: node ≥ 18, ffmpeg, Chrome or Chromium, `uv` (only for narration)
 ```sh
 npx skills add iart-ai/javascript-animation-skills -g -y -s '*'   # javascript-animation + soundtrack
 git clone https://github.com/FrancyJGLisboa/explainer-film ~/.agents/skills/explainer-film
-cd ~/.agents/skills/explainer-film && npm i playwright-core
+cd ~/.agents/skills/explainer-film && npm i            # playwright-core + mathjax-full
 ln -s ~/.agents/skills/explainer-film ~/.claude/skills/explainer-film   # Claude Code
 ```
 

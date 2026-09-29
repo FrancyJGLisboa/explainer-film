@@ -24,6 +24,11 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
 - Time grid: 1 beat = 60 / BPM s, 1 bar = 4 beats. 45 s at 96 bpm = 72 beats = 18 bars. SC counts beats, SECTIONS counts bars.
 - "vertical" / "reels" / "tiktok" → W = 1080, H = 1920 (hero on top, visual below). "60 seconds" → DUR = 60 = 96 beats = 24 bars (beats = DUR × BPM / 60).
 - Films go in `~/films/<slug>/`.
+- **Longer than 60 s** ("3 minutes", "a longer video", "in chapters") → a chapter film:
+  - `film.sh new-long <slug> "<Title>" <n>` makes `outline.md` plus `ch01..chNN`. Each chapter is a normal film of 30–60 s with one idea, and its title names the topic.
+  - Fill `outline.md` first (core idea; one row per chapter), then make each chapter with steps 2–5.
+  - Keep one look: `head.js` palette identical in every chapter. Keep the same hero and thread. Open each chapter with `chapterCard(n, title, t, 0, b(5))`, and end it on a quiet last bar.
+  - `film.sh check-long <dir>` checks every chapter and the shared look; `film.sh render-long <dir>` renders the chapters that changed and joins them into `<slug>.mp4`.
 
 ## Pipeline
 
@@ -48,7 +53,9 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
 - In scenes.js, time visuals to the voice with `said('scene').at / .to`, and use `speaking(t)` to animate a character while the voice talks.
 - `film.sh check` fails if a line runs past its scene. `film.sh render` mixes the voice in, lowers the music under it and normalises loudness to −16 LUFS. It keeps `<slug>.music-only.mp4` too.
 
-**3. Look (`src/head.js`).** Retune HERO and THREAD to the topic (palette guide in style.md). Keep the ground dark and flat. Give each quantity one VAR colour.
+**3. Look (`src/head.js`).** Retune HERO and THREAD to the topic (palette guide in style.md). Give each quantity one VAR colour.
+- **World:** pick the environment that matches the topic's real setting: `WORLD.landscape` (nature, land, farming), `space` (astronomy, scale), `city` (people, economy), `ocean` (water, climate), `micro` (biology, chemistry). Use `function backdrop(t, cam) { WORLD.x(t, cam); }`, or none (plain dark ground) for pure maths.
+- A world is the setting, never the explanation: the checks ignore it for frame fill.
 
 **4. Scenes (`src/scenes.js`).** The scaffold is a demo about generic growth. **Rewrite every scene for this film's topic**: keep the structure (grid, composition, checks), replace all the content. `film.sh check` fails a film that is more than 50% identical to the template, or whose headlines never mention the title's topic.
 - `SC = scenes([name, beats], ...)` summing to DUR, plus `MUSIC`, `SECTIONS` (bars), one `SHOTS` camera per scene, and `EVENTS` (one sfx per visible action, on beats).
@@ -60,11 +67,14 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
   - Words go in the empty band above or below the visual, never across it.
   - Every scene has one big thing on screen. No empty tail: the last scene keeps the story's object in view.
 - `world(t)` draws in world coordinates under the camera; `words(t)` draws in screen space. The file ends with `finish()`.
+- **Characters act.** Use the hero's mood to track the story (`plain → think → surprised/worried → happy/excited`). Use `walk` to move between places, `talk: voiceLevel(t)` when narrated, and `waveR: t` to greet.
+- **Counts and shares:** `crowd(..., n, t, {mark})` shows "k out of n" as real creatures, never as a pie of made-up size.
+- **Maths:** put the LaTeX in `src/tex.json` (colour symbols with `\color{#hex}{…}` in their VAR colour). Draw it with `tex(key, …)`, and use `texMorph(a, b, …)` when one form becomes another (expand, simplify, substitute). Keep `eq()` for tiny labels only.
 
 Kit parts:
 - Words: `kine` (headline, `*accent*`, `{word|#hex}`), `pill`, `bubble`.
-- 3b1b: `eq` (coloured, `^`/`_`), `axes` + `plot`, `arrow`, `brace`, `grid`, `numberLine`, `bars`, `SHAPE.*` + `morph` + `fillPts` + `writeOn`, `pathAlong`, `counter`.
-- Kurzgesagt: `blob` / `robot` (state: grow, mood, look, blink, tilt, squash, arms), `card`, `stamp`, `glove`, `confetti`, `thread` (the one continuous shape), `motes`.
+- 3b1b: `tex` / `texMorph` (real LaTeX), `eq` (tiny labels), `axes` + `plot`, `arrow`, `brace`, `grid`, `numberLine`, `bars`, `SHAPE.*` + `morph` + `fillPts` + `writeOn`, `pathAlong`, `counter`.
+- Kurzgesagt: `WORLD.*` backdrops, `blob` / `robot` (state: grow, mood, look, blink, tilt, squash, arms, walk, talk, waveR), `crowd`, `chapterCard`, `card`, `stamp`, `glove`, `confetti`, `thread` (the one continuous shape), `motes`.
 - Sfx names: pop, popLow, boing, ding, tick, click, clack, swish, whoosh, whooshIn, whooshOut, thud, clonk, zip, blip, flag, alarm, notify, drip, step, creak, clank, switch.
 
 **5. QC loop (up to 3 rounds).** Run `film.sh check <dir>`. It must exit 0. It checks:

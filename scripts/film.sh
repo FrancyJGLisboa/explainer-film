@@ -3,6 +3,8 @@
 #   film.sh new <slug> ["Title"]   scaffold ~/films/<slug> (brief.md, src/head.js, src/scenes.js)
 #   film.sh check <dir>            build + contact sheet (qc/sheet.jpg) + asset audit + layout + rules (contrast, corners, timing)
 #   film.sh stills <dir> 4s,12s    full-size stills into qc/
+#   film.sh new-long <slug> "Title" <n>   a long film: ~/films/<slug>/outline.md + ch01..chNN (each a normal film)
+#   film.sh check-long <dir> / render-long <dir>   check every chapter (+ same look) / render changed chapters and join them
 #   film.sh voice <dir>            narrate src/narration.json with Kokoro (free, local) -> voice/*.wav + beats each scene needs
 #   film.sh render <dir>           build + render <slug>.mp4 (+ .wav, cues) + sync/loudness check (+ voice mix if voice/ exists)
 set -e
@@ -21,6 +23,30 @@ case "$cmd" in
     cp "$ROOT/kit/scenes.template.js" "$d/src/scenes.js"
     cp "$ROOT/references/brief.template.md" "$d/brief.md"
     echo "$d" ;;
+  new-long)
+    slug=$1; title=${2:-$1}; n=${3:-3}; [ -n "$slug" ] || { echo "usage: film.sh new-long <slug> [title] [chapters]"; exit 1; }
+    d=${FILMS_DIR:-$HOME/films}/$slug; [ -e "$d" ] && { echo "exists: $d"; exit 1; }
+    mkdir -p "$d"; printf '# %s\n\n**Core idea:**\n\n| ch | title (must name the topic) | one idea | seconds |\n|---|---|---|---|\n' "$title" > "$d/outline.md"
+    i=1; while [ $i -le "$n" ]; do c=$(printf 'ch%02d' $i)
+      FILMS_DIR="$d" sh "$0" new "$c" "$title: chapter $i" >/dev/null; echo "| $i | $title: ... |  | 45 |" >> "$d/outline.md"; i=$((i+1)); done
+    echo "$d" ;;
+  check-long)
+    d=$(cd "$1" && pwd); s=0
+    ref=$(ls -d "$d"/ch*/ | head -1)
+    look() { grep -E '^(const (BG|VAR|PAPER|LOOK)|      THREAD)' "$1/src/head.js"; }
+    for c in "$d"/ch*/; do c=${c%/}; echo "== $(basename "$c")"
+      out=$(sh "$0" check "$c" 5 2>&1) || s=1; echo "$out" | grep -vE '^(contact sheet|CLEAN: /)' | tail -6
+      # one look across chapters: palette and LOOK lines must match chapter 1
+      [ "$(look "$ref")" = "$(look "$c")" ] || { echo "look: $(basename "$c") palette differs from $(basename "$ref"): keep one look"; s=1; }
+    done; exit $s ;;
+  render-long)
+    d=$(cd "$1" && pwd); slug=$(basename "$d"); list="$d/.chapters.txt"; : > "$list"
+    for c in "$d"/ch*/; do c=${c%/}; cs=$(basename "$c")
+      if [ ! -f "$c/$cs.mp4" ] || [ -n "$(find "$c/src" "$c/voice" -newer "$c/$cs.mp4" -type f 2>/dev/null | head -1)" ]; then echo "== render $cs"; sh "$0" render "$c" | tail -3; else echo "== $cs unchanged"; fi
+      echo "file '$c/$cs.mp4'" >> "$list"; done
+    FF=$(command -v ffmpeg || echo /usr/local/bin/ffmpeg)
+    "$FF" -y -loglevel error -f concat -safe 0 -i "$list" -c:v copy -c:a aac -b:a 192k "$d/$slug.mp4"
+    echo "joined $(grep -c . "$list") chapters -> $d/$slug.mp4" ;;
   check)
     d=$(cd "$1" && pwd); sh "$HERE/build.sh" "$d" >/dev/null
     cd "$RUN"
@@ -53,5 +79,5 @@ case "$cmd" in
       node "$HERE/narrate-plan.mjs" "$d/piece.html" > "$d/voice/plan.json"
       sh "$HERE/mix.sh" "$d" "$d/voice/plan.json"
     fi ;;
-  *) sed -n '2,8p' "$0"; exit 1 ;;
+  *) sed -n '2,10p' "$0"; exit 1 ;;
 esac

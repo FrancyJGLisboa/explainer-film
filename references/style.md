@@ -24,10 +24,12 @@ Numbers on screen come from the brief's sources. Illustrative data is labelled a
 - One warm hero character (blob for general topics, robot for tech topics) with a mood that tracks the story:
   confused → wrong → effort → insight.
 - A circular DISC behind the hero anchors the stage.
+- Worlds (`WORLD.*`) give the setting depth: stacked silhouettes that get darker toward the viewer, soft light pools, fine grain. Keep them quiet (mixed toward blue air or night), so the hero and the diagram carry the contrast.
+- Characters act: mood follows the story, they walk between places, they talk with the voice. A crowd shows "how many" as creatures.
 - Cute, but serious about the facts.
 
 ## 3Blue1Brown half (the ideas)
-- Math and diagrams are objects: axes draw on, curves trace left to right, equations spring in part by part.
+- Math and diagrams are objects: axes draw on, curves trace left to right, equations are real LaTeX written on glyph by glyph (`tex`), and they transform into each other (`texMorph`).
 - **Colour is meaning:** each quantity gets one VAR colour, and the symbol, the object and the word all share it. Tie words to objects with `{word|#hex}`.
 - **Transform, don't replace.** When a representation changes (dots → bar → curve, circle → star), morph it (`morph`, `SHAPE.*`), or move the thread dot from one to the next.
 - Build intuition before the formula: show the behaviour first, then name it with an equation.

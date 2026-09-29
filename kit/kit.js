@@ -319,6 +319,15 @@ function pathAlong(pts, u) {                      // point at fraction u along a
   const k = (d - L[j - 1]) / (L[j] - L[j - 1] || 1); return [lerp(pts[j - 1][0], pts[j][0], k), lerp(pts[j - 1][1], pts[j][1], k)];
 }
 
+// ---------- chapters ----------
+function chapterCard(n, title, t, at, out, o = {}) {   // big chapter number + title, springs in and leaves upward (screen space)
+  const { x = W / 2, y = H / 2 } = o;
+  if (t < at || t > out + 1) return;
+  const k = back(prog(t, at, at + .5)) * (1 - ease(prog(t, out, out + .4)));
+  if (k > 0 && !HIDE_WORDS) { ctx.save(); ctx.translate(x, y - 90); ctx.scale(k, k); circ(0, 0, 70, THREAD); ctx.font = SANS(80); ctx.fillStyle = DEEP; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(n), 0, 6); ctx.restore(); }
+  kine(title, x, y + 60, t, at + .25, out, { size: 76, align: 'center', id: 'chapter ' + n });
+}
+
 // ---------- storyboard helpers ----------
 // scenes(['meet', 6], ['guess', 8], ...) -> { meet: {from, to}, guess: {...} } in seconds, on the beat grid
 function scenes(...list) { const out = {}; let at = 0; for (const [name, beats] of list) {
