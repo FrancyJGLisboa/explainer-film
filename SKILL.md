@@ -50,7 +50,7 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
 
 **3. Look (`src/head.js`).** Retune HERO and THREAD to the topic (palette guide in style.md). Keep the ground dark and flat. Give each quantity one VAR colour.
 
-**4. Scenes (`src/scenes.js`).** Replace the demo, keeping its shape:
+**4. Scenes (`src/scenes.js`).** The scaffold is a demo about generic growth. **Rewrite every scene for this film's topic**: keep the structure (grid, composition, checks), replace all the content. `film.sh check` fails a film that is more than 50% identical to the template, or whose headlines never mention the title's topic.
 - `SC = scenes([name, beats], ...)` summing to DUR, plus `MUSIC`, `SECTIONS` (bars), one `SHOTS` camera per scene, and `EVENTS` (one sfx per visible action, on beats).
 - Scene names are identifiers (letters, digits, `_`): they become `SC.name`.
 - `shows(label, condition)` for every reality-map test. Draw from the same functions you test (the template's `lin`/`expo`/`logi`), so the check is about the picture itself.

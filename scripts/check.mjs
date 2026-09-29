@@ -60,7 +60,9 @@ const res = await page.evaluate(EVERY => {
     }
   }
   window.setHideWords(false);
-  out.words = window.getWords().filter(s => s.split(' ').length > 8);
+  out.allWords = window.getWords();
+  out.words = out.allWords.filter(s => s.split(' ').length > 8);
+  out.title = document.title;
   out.checks = window.CHECKS;
   return out;
 }, EVERY);
@@ -75,6 +77,13 @@ Object.entries(res.over).forEach(([k, ts]) => fails.push(`text over art: "${k}" 
 const fl = res.fill.map(f => f[1]).sort((a, b) => a - b), med = fl[Math.floor(fl.length / 2)] || 0;
 if (med < .16) fails.push(`frame fill: the median frame uses only ${(med * 100).toFixed(0)}% of the frame (need >= 16%): scale up the hero and the main visual, spread the diagram across the free two thirds`);
 let run = []; for (const [t, v] of [...res.fill, [1e9, 1]]) { if (v < .08) run.push(t); else { if (run.length >= 4) fails.push(`frame fill: nearly empty frames from ${run[0]}s to ${run[run.length - 1]}s`); run = []; } }
+// on topic: at least one content word of the film's title must appear on screen
+const STOP = new Set('a an and the of to in on for why how what is are it its with from by at as then feels suddenly slow fast explainer video film about into'.split(' '));
+const norm = s => s.toLowerCase().replace(/[^a-z0-9à-ÿ ]/g, ' ');
+const titleWords = norm(res.title).split(/\s+/).filter(w => w.length > 2 && !STOP.has(w));
+const screen = norm(res.allWords.join(' '));
+if (titleWords.length && !titleWords.some(w => screen.includes(w.slice(0, Math.max(4, w.length - 2)))))
+  fails.push(`off topic: no word from the title "${res.title}" (${titleWords.join(', ')}) appears in any headline; the film must be about its topic`);
 res.words.forEach(s => fails.push(`too long: "${s}" (${s.split(' ').length} words; max 8 per line)`));
 errors.forEach(e => fails.push(`page error: ${e}`));
 if (fails.length) { console.log(fails.join('\n')); console.log(`\n${fails.length} rule failure(s).`); process.exit(1); }
