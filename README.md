@@ -26,11 +26,13 @@ The aim is a picture people can *reason with*, and one that doesn't mislead when
 ## Use it
 Just ask your agent:
 
-> make an explainer about why the sky is blue
+> make a TikTok explaining why the sky is blue
 >
-> animate this transcript: …
+> animate this transcript for LinkedIn: …
 >
-> vertical, 60 seconds, about how vaccines train the immune system
+> a narrated 30-second Reel about how vaccines train the immune system, ASMR voice
+>
+> a YouTube explainer on compound interest in the style of <link>
 
 The agent writes a brief (core idea, reality map, claims with sources, beats), codes the scenes with the kit, and runs
 the checks until they pass. Then it renders the MP4 and checks that the music lands on the cuts without sudden jumps in loudness.
@@ -82,22 +84,25 @@ The checks earn their keep. The first end-to-end test, a film about compound int
 On top of that, it runs the upstream checks: overlapping text (layout-check), a check that nothing external is loaded (asset-audit), and on render, cuts that miss the beat or jump in loudness (sync-check).
 
 ## Install
-Requirements: node ≥ 18, ffmpeg, Chrome or Chromium, `uv` (only for narration), and the two upstream skills this builds on:
+You need Node.js 18+ and ffmpeg (`brew install node ffmpeg`, or your system's package manager). Then:
 
 ```sh
-npx skills add iart-ai/javascript-animation-skills -g -y -s '*'   # javascript-animation + soundtrack
-git clone https://github.com/FrancyJGLisboa/explainer-film ~/.agents/skills/explainer-film
-cd ~/.agents/skills/explainer-film && npm i            # playwright-core + mathjax-full
-ln -s ~/.agents/skills/explainer-film ~/.claude/skills/explainer-film   # Claude Code
+git clone https://github.com/FrancyJGLisboa/explainer-film
+cd explainer-film && ./install.sh
 ```
+
+`install.sh` adds the two upstream skills, the node packages and a browser, links the skill for Claude Code (`~/.claude/skills`) and for the other agent CLIs (`~/.agents/skills`), then runs `film.sh doctor`, which lists anything still missing with the exact fix. The independent reviewers use the `claude` CLI. Narration (optional) uses `uv` and downloads the free Kokoro voices on first use.
 
 ## By hand
 ```sh
-scripts/film.sh new sky-blue "Why the Sky Is Blue"   # -> ~/films/sky-blue (brief.md, src/head.js, src/scenes.js)
+scripts/film.sh doctor                                 # can it run here?
+scripts/film.sh new sky-blue "Why the Sky Is Blue" tiktok   # -> ~/films/sky-blue (brief.md, src/head.js, src/scenes.js)
+scripts/film.sh plan ~/films/sky-blue                  # independent review of the plan, before any scene code
 scripts/film.sh check ~/films/sky-blue                # contact sheet + all checks
 scripts/film.sh stills ~/films/sky-blue 12s,20s       # look closer
 scripts/film.sh voice ~/films/sky-blue                # optional: narrate src/narration.json, prints beats per scene
-scripts/film.sh render ~/films/sky-blue               # MP4 + sync/loudness check (+ voice mix)
+scripts/film.sh review ~/films/sky-blue                # independent review of the film
+scripts/film.sh render ~/films/sky-blue                # MP4 + sync check (+ voice mix) -> sky-blue.tiktok.mp4 (-14 LUFS) + cover
 ```
 
 ## Layout

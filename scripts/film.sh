@@ -1,5 +1,6 @@
 #!/bin/sh
 # film.sh: the explainer-film pipeline, one command per stage.
+#   film.sh doctor                 can it run here? each requirement OK/MISSING with the fix
 #   film.sh new <slug> ["Title"] [platform]   scaffold ~/films/<slug>; platform: tiktok reels shorts instagram square linkedin youtube x (default youtube)
 #   film.sh check <dir>            build + contact sheet (qc/sheet.jpg) + asset audit + layout + rules (contrast, corners, timing)
 #   film.sh stills <dir> 4s,12s    full-size stills into qc/
@@ -16,8 +17,10 @@ JA=$HOME/.agents/skills/javascript-animation/scripts; ST=$HOME/.agents/skills/so
 [ -d "$HOME/.local/node/bin" ] && export PATH=$HOME/.local/node/bin:$PATH
 # node scripts resolve playwright from the working directory: prefer this repo's node_modules, else ~
 RUN=$HOME; [ -d "$ROOT/node_modules/playwright-core" ] && RUN=$ROOT
+hash16() { if command -v shasum >/dev/null; then shasum -a 256 "$1"; else sha256sum "$1"; fi | cut -c1-16; }
 cmd=$1; shift || true
 case "$cmd" in
+  doctor) sh "$HERE/doctor.sh" ;;
   new)
     slug=$1; title=${2:-$1}; plat=${3:-youtube}; [ -n "$slug" ] || { echo "usage: film.sh new <slug> [title] [platform]"; exit 1; }
     case "$plat" in tiktok|reels|shorts) wh="1080 1920";; instagram|linkedin) wh="1080 1350";; square) wh="1080 1080";; youtube|x) wh="1920 1080";;
@@ -90,19 +93,19 @@ case "$cmd" in
       [ -f "$d/src/narration.json" ] && { printf '\n## Narration (src/narration.json)\n\n```json\n'; cat "$d/src/narration.json"; printf '\n```\n'; }
       [ -f "$d/refs/style.md" ] && { printf '\n## Reference style (refs/style.md)\n\n'; cat "$d/refs/style.md"; }
     } > "$W/plan-packet.md"
-    h=$(shasum -a 256 "$d/brief.md" | cut -c1-16)
+    h=$(hash16 "$d/brief.md")
     echo "reviewing the plan with an independent reviewer (about 1 min)..."
     sh "$HERE/judge.sh" "$W" "$ROOT/references/plan-reviewer.md" plan-packet.md "$V/plans/$h.json" "$V/plan_$slug" ;;
   review)
     d=$(cd "$1" && pwd); slug=$(basename "$d"); V=$HOME/.cache/explainer-film/verdicts; mkdir -p "$V"
     # the film review needs an approved plan for the current brief (REVIEW_ANYWAY=1 is for calibrating the reviewer only)
-    bh=$(shasum -a 256 "$d/brief.md" 2>/dev/null | cut -c1-16)
+    bh=$(hash16 "$d/brief.md" 2>/dev/null)
     if [ "${REVIEW_ANYWAY:-0}" != 1 ]; then
       python3 -c "import json,sys; sys.exit(0 if json.load(open(sys.argv[1]))['approved'] else 1)" "$V/plans/$bh.json" 2>/dev/null || { echo "REFUSED: the plan for this brief is not approved. Run film.sh plan <dir> first (and again after any brief change)."; exit 1; }
       if ! out=$(sh "$0" check "$d" 5 2>&1); then echo "$out" | grep -vE '^(contact sheet|CLEAN: /)'; echo "REFUSED: review runs only on a film that passes film.sh check."; exit 1; fi
     fi
     sh "$HERE/build.sh" "$d" >/dev/null; cd "$RUN" && node "$HERE/review.mjs" "$d" || exit 1
-    h=$(shasum -a 256 "$d/piece.html" | cut -c1-16)
+    h=$(hash16 "$d/piece.html")
     echo "reviewing $(ls "$d/qc/review"/*.jpg | wc -l | tr -d ' ') stills with an independent reviewer (about 1-3 min)..."
     sh "$HERE/judge.sh" "$d/qc/review" "$ROOT/references/reviewer.md" packet.md "$V/$h.json" "$V/film_$slug" ;;
   render)
@@ -111,7 +114,7 @@ case "$cmd" in
     if [ "${FORCE:-0}" != 1 ]; then
       if ! out=$(sh "$0" check "$d" 5 2>&1); then echo "$out" | grep -vE '^(contact sheet|CLEAN: /)'; echo "REFUSED: fix the failures above, then render again. The film is not done while any check fails."; exit 1; fi
       # the independent reviewer must have approved this exact build (any change after review voids the approval)
-      h=$(shasum -a 256 "$d/piece.html" | cut -c1-16); V=$HOME/.cache/explainer-film/verdicts/$h.json
+      h=$(hash16 "$d/piece.html"); V=$HOME/.cache/explainer-film/verdicts/$h.json
       python3 -c "import json,sys; sys.exit(0 if json.load(open(sys.argv[1]))['approved'] else 1)" "$V" 2>/dev/null || { echo "REFUSED: no independent approval for this build. Run film.sh review <dir>, fix what it rejects, and review again."; exit 1; }
     fi
     sh "$HERE/build.sh" "$d" >/dev/null; cd "$RUN"
@@ -120,6 +123,7 @@ case "$cmd" in
     if [ -f "$d/voice/timing.json" ]; then
       node "$HERE/narrate-plan.mjs" "$d/piece.html" > "$d/voice/plan.json"
       sh "$HERE/mix.sh" "$d" "$d/voice/plan.json"
-    fi ;;
-  *) sed -n '2,13p' "$0"; exit 1 ;;
+    fi
+    sh "$HERE/export.sh" "$d" ;;
+  *) sed -n '2,14p' "$0"; exit 1 ;;
 esac
