@@ -540,7 +540,7 @@ function finish() {                               // call once at the end of sce
   window.draw = frameAt; window.FRAMES = FRAMES; window.FPS = FPS;
   window.CUES = SHOTS.slice(1).map(s => s.from);
   window.SCENE_LIST = Object.entries(SC).filter(([k]) => k !== '_beats').map(([name, s]) => ({ name, from: s.from, to: s.to }));
-  window.SAFE = SAFE; window.PLATFORM_NAME = typeof PLATFORM === 'undefined' ? 'youtube' : PLATFORM;
+  window.ZONE_VISUAL = ZONE.visual; window.SAFE = SAFE; window.PLATFORM_NAME = typeof PLATFORM === 'undefined' ? 'youtube' : PLATFORM;
   window.CHECKS = CHECKS; window.getWords = () => [...WORD_LOG];
   window.setHideWords = v => { HIDE_WORDS = v; }; window.setHideBackdrop = v => { HIDE_BACKDROP = v; }; window.setHideHero = v => { HIDE_HERO = v; }; window.BG_HEX = BG;
   window.SCORE = ac => buildGroove(ac, { dur: DUR, bpm: BPM, sections: SECTIONS, events: EVENTS, ...MUSIC });

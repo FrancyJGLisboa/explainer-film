@@ -45,7 +45,8 @@ const res = await page.evaluate(EVERY => {
     if (window.setHideBackdrop) { window.setHideBackdrop(false); window.draw(Math.round(t * window.FPS)); }
     if (t - lastFill >= 1 - 1e-9) { lastFill = t; const d = explain, CELL = 40, occ = new Set();
       for (let y = 0; y < H; y += 3) for (let xx = 0; xx < W; xx += 3) if (isArt(d, (y * W + xx) * 4)) occ.add(Math.floor(y / CELL) * 1000 + Math.floor(xx / CELL));
-      out.fill.push([+t.toFixed(2), occ.size / (Math.ceil(W / CELL) * Math.ceil(H / CELL))]); }
+      let bx0 = 1e9, by0 = 1e9, bx1 = -1, by1 = -1; for (const k of occ) { const cy = Math.floor(k / 1000), cx = k % 1000; bx0 = Math.min(bx0, cx); bx1 = Math.max(bx1, cx); by0 = Math.min(by0, cy); by1 = Math.max(by1, cy); }
+      out.fill.push([+t.toFixed(2), occ.size / (Math.ceil(W / CELL) * Math.ceil(H / CELL)), bx1 < 0 ? null : [bx0 * CELL, by0 * CELL, (bx1 + 1) * CELL, (by1 + 1) * CELL]]); }
     for (const L of window.LAYOUT || []) {
       if (L.kind !== 'text') continue;
       const cx = L.x + L.w / 2, cy = L.y + L.h / 2, key = L.id, ts = t.toFixed(2);
@@ -77,7 +78,7 @@ const res = await page.evaluate(EVERY => {
   window.setHideWords(false);
   out.allWords = window.getWords();
   out.words = out.allWords.filter(s => s.split(' ').length > 8);
-  out.title = document.title; out.platform = window.PLATFORM_NAME;
+  out.title = document.title; out.platform = window.PLATFORM_NAME; out.zone = window.ZONE_VISUAL || null;
   out.checks = window.CHECKS;
   return out;
 }, EVERY);
@@ -99,7 +100,11 @@ Object.entries(res.unsafe).forEach(([k, ts]) => fails.push(`safe zone: "${k}" is
 Object.entries(res.off).forEach(([k, ts]) => fails.push(`off-frame: "${k}" runs off the frame at ${span(ts)}`));
 Object.entries(res.over).forEach(([k, ts]) => fails.push(`text over art: "${k}" is drawn across lines or shapes at ${span(ts)}; move it to empty space`));
 const fl = res.fill.map(f => f[1]).sort((a, b) => a - b), med = fl[Math.floor(fl.length / 2)] || 0;
-if (med < .08) fails.push(`frame fill: with the hero hidden, strong marks cover only ${(med * 100).toFixed(0)}% of the frame (need >= 8%): make the explanation bigger and spread it across the free two thirds (enlarging the hero or adding faint wallpaper does not count)`);
+if (med < .08) {
+  const boxes = res.fill.map(f => f[2]).filter(Boolean), m = i => boxes.map(b => b[i]).sort((a, b) => a - b)[Math.floor(boxes.length / 2)] ?? 0, z = res.zone;
+  const where = boxes.length ? ` Your explanation typically sits in x ${m(0)}-${m(2)}, y ${m(1)}-${m(3)}` + (z ? `, but the visual zone for this platform is x ${Math.round(z.x)}-${Math.round(z.x + z.w)}, y ${Math.round(z.y)}-${Math.round(z.y + z.h)} (ZONE.visual): draw the main visual across that whole area.` : '.') : '';
+  fails.push(`frame fill: with the hero hidden, strong marks cover only ${(med * 100).toFixed(0)}% of the frame (need >= 8%).${where} Enlarging the hero or adding faint wallpaper does not count.`);
+}
 let run = []; for (const [t, v] of [...res.fill, [1e9, 1]]) { if (v < .04) run.push(t); else { if (run.length >= 4) fails.push(`frame fill: nearly empty frames from ${run[0]}s to ${run[run.length - 1]}s`); run = []; } }
 // on topic: at least one content word of the film's title must appear on screen
 const STOP = new Set('a an and the of to in on for why how what is are it its with from by at as then feels suddenly slow fast explainer video film about into'.split(' '));
