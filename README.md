@@ -37,10 +37,15 @@ the checks until they pass. Then it renders the MP4 and checks that the music la
 
 ## What the checks catch
 `scripts/check.mjs`, run by `film.sh check`, fails the build on:
+- **pictures that contradict their words**: each reality-map row has a test the code runs on what it draws (`shows(...)`). "It explodes" has to mean the curve ends at least 5× steeper than it starts
+- **empty frames**: a small graph floating in empty space fails (median frame fill ≥ 16%)
+- **text over art**: a headline drawn across a curve or a shape
 - text that is hard to read against what is actually behind it (it hides the words and measures the pixels behind them)
 - text in corners, or running off the frame
-- an action that runs past the end of its scene (`fits()`), and a storyboard whose length doesn't match the film's
+- an action that runs past the end of its scene (`fits()`), music with gaps, a storyboard whose length doesn't match the film's
 - headlines longer than 8 words
+
+The checks earn their keep. The first end-to-end test, a film about compound interest, passed the original checks and still looked weak: the "exploding" curve was nearly straight, the frame was mostly empty, and text crossed the curve. The new checks fail that film on two of those: the empty frame and the text over the curve. The third, a curve that doesn't explode, is caught once a film declares its tests, which the brief now requires. That test also caught a curve in the kit's own template that was supposed to flatten and didn't.
 
 On top of that, it runs the upstream checks: overlapping text (layout-check), a check that nothing external is loaded (asset-audit), and on render, cuts that miss the beat or jump in loudness (sync-check).
 

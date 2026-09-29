@@ -9,6 +9,13 @@ const MONO = (s, w = 600) => `${w} ${s}px Menlo, ui-monospace, monospace`;
 
 // ---------- checks the qc script reads (window.CHECKS) ----------
 const CHECKS = [];
+function shows(label, ok, detail = '') {         // assert the picture shows the claim (reality map "test" column)
+  if (!ok) CHECKS.push(`shows: "${label}" is not true of what is drawn${detail ? ' (' + detail + ')' : ''}`);
+}
+function bend(fn, u0, u1, k = .05) {             // end slope / start slope: 1 = straight line, >= 5 reads as "explodes"
+  const d = (u1 - u0) * k, s0 = (fn(u0 + d) - fn(u0)) / d, s1 = (fn(u1) - fn(u1 - d)) / d;
+  return s0 === 0 ? Infinity : s1 / s0;
+}
 function fits(label, start, end, lo, hi) {        // assert an action [start, end] happens inside its scene [lo, hi]
   if (start < lo - 1e-6 || end > hi + 1e-6) CHECKS.push(`${label}: runs ${start.toFixed(2)}-${end.toFixed(2)}s, outside its scene ${lo.toFixed(2)}-${hi.toFixed(2)}s`);
 }
@@ -284,7 +291,8 @@ function pathAlong(pts, u) {                      // point at fraction u along a
 
 // ---------- storyboard helpers ----------
 // scenes(['meet', 6], ['guess', 8], ...) -> { meet: {from, to}, guess: {...} } in seconds, on the beat grid
-function scenes(...list) { const out = {}; let at = 0; for (const [name, beats] of list) { out[name] = { from: b(at), to: b(at + beats), beats: [at, at + beats] }; at += beats; } out._beats = at; return out; }
+function scenes(...list) { const out = {}; let at = 0; for (const [name, beats] of list) {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) CHECKS.push(`scene name "${name}": use letters, digits and _ only (it becomes SC.${name})`); out[name] = { from: b(at), to: b(at + beats), beats: [at, at + beats] }; at += beats; } out._beats = at; return out; }
 
 // ---------- frame ----------
 function frameAt(frame) {
@@ -300,10 +308,15 @@ function frameAt(frame) {
 }
 function finish() {                               // call once at the end of scenes.js
   if (Math.abs(SC._beats * BEAT - DUR) > .01) CHECKS.push(`storyboard is ${SC._beats} beats = ${(SC._beats * BEAT).toFixed(2)}s but DUR = ${DUR}s`);
+  const bars = Math.round(DUR / (4 * BEAT)); let edge = 0;   // music must cover every bar, in order (1 bar = 4 beats)
+  SECTIONS.forEach(([a, z]) => { if (a !== edge) CHECKS.push(`SECTIONS: bar ${edge} to ${a} has no music (sections must be contiguous from bar 0)`); edge = z; });
+  if (edge !== bars) CHECKS.push(`SECTIONS end at bar ${edge} but the film has ${bars} bars (DUR / (4 x BEAT))`);
+  let sEdge = 0; SHOTS.forEach(s => { if (Math.abs(s.from - sEdge) > 1e-6) CHECKS.push(`SHOTS: gap or overlap at ${sEdge.toFixed(2)}s`); sEdge = s.to; });
+  if (sEdge < DUR - 1e-6) CHECKS.push(`SHOTS end at ${sEdge.toFixed(2)}s, before DUR`);
   EVENTS.forEach(([at, name]) => { if (at < 0 || at > DUR) CHECKS.push(`sound "${name}" at ${at.toFixed(2)}s is outside the film`); });
   window.draw = frameAt; window.FRAMES = FRAMES; window.FPS = FPS;
   window.CUES = SHOTS.slice(1).map(s => s.from);
   window.CHECKS = CHECKS; window.getWords = () => [...WORD_LOG];
-  window.setHideWords = v => { HIDE_WORDS = v; };
+  window.setHideWords = v => { HIDE_WORDS = v; }; window.BG_HEX = BG;
   window.SCORE = ac => buildGroove(ac, { dur: DUR, bpm: BPM, sections: SECTIONS, events: EVENTS, ...MUSIC });
 }

@@ -7,9 +7,9 @@
 **Audience / format:** general, 45 s, 16:9, English, music only
 
 ## Reality map (see references/style.md)
-| real thing | on screen | what stays true |
-|---|---|---|
-|  |  |  |
+| real thing | on screen | what stays true | test (becomes `shows(...)`) |
+|---|---|---|---|
+|  |  |  |  |
 
 ## Claims on screen
 | claim | source | status |

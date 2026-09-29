@@ -41,6 +41,12 @@ Numbers on screen come from the brief's sources. Illustrative data is labelled a
 5. One continuous thread (the THREAD dot, or a shape that morphs), so there are no hard cuts.
 6. Every visible action gets a sound on the beat; cuts land on bar lines.
 
+## Composition (checked by frame fill)
+- 16:9: hero on the left third (s ≥ 1.1) on its DISC; the main visual fills the right two thirds; words in the empty band above or below it.
+- 9:16: hero in the top third, visual in the middle, words at the bottom.
+- The median frame should use at least 16% of the frame (40 px cells with anything drawn in them). A small graph floating in empty space fails.
+- The last scene keeps the story's object on screen. It never ends on a bare character.
+
 ## Palette guide
 Keep BG/DEEP/DISC/TEXT dark and neutral. Retune HERO and THREAD to the topic (money: gold hero, green thread;
 biology: coral hero, teal thread; climate: sand hero, blue thread). VAR colours come from 3b1b and stay fixed.
