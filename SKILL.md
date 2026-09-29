@@ -109,6 +109,11 @@ Then render again.
 - `open` the mp4.
 - Tell the user in a few lines: what it shows, what was checked, and anything dropped for lack of a source.
 
+## Keep going (failing is normal; quitting early is not)
+- A failing check or a rejection is the normal middle of the job, not a reason to stop. Redesigning a scene (bigger visual, new layout, words moved to the empty band) is ordinary work: do it.
+- Work the failures in this order: fill and layout first (make the explanation big: one large labelled diagram per scene, built from the template's composition), then words over art, then claim tests, then everything else.
+- Only stop and report when (a) the reviewer has rejected the film 3 times (the script stops you), or (b) 8 rounds of `film.sh check` have made no progress on the same failure. Then report exactly what still fails.
+
 ## Hard rules
 - **A film is not done while any check fails.** `film.sh render` refuses to run until `film.sh check` passes. Never set FORCE=1 yourself (it is for a person), and never report a film as finished with failures.
 - The hero's colour is not any entity's colour: if red means "virus" or "wrong", the hero is not red.
