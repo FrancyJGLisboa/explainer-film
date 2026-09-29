@@ -8,8 +8,9 @@
 set -e
 W=$1; RULES=$2; PACKET=$3; OUT=$4; P=$5
 n=$(cat "$P.rounds" 2>/dev/null || echo 0)
-if [ "$n" -ge 3 ] && [ "${REVIEW_MORE:-0}" != 1 ]; then
-  echo "STOP: the reviewer has rejected this 3 times. Report the latest verdict ($W/verdict.json) to the user and let them decide; do not keep looping."; exit 1; fi
+CAP=${CAP:-3}
+if [ "$n" -ge "$CAP" ] && [ "${REVIEW_MORE:-0}" != 1 ]; then
+  echo "STOP: the reviewer has rejected this $CAP times. Report the latest verdict ($W/verdict.json) to the user and let them decide; do not keep looping."; exit 1; fi
 [ -f "$P.last.json" ] && { printf '\n## Previous review (check each required fix first)\n\n```json\n'; cat "$P.last.json"; printf '\n```\n'; } >> "$W/$PACKET"
 command -v claude >/dev/null || { echo "reviewer unavailable: the claude CLI is not installed; a person must review $W and override with FORCE=1"; exit 1; }
 SCHEMA='{"type":"object","properties":{"approved":{"type":"boolean"},"summary":{"type":"string"},"suggestions":{"type":"array","items":{"type":"string"}},"scenes":{"type":"array","items":{"type":"object","properties":{"scene":{"type":"string"},"verdict":{"type":"string","enum":["pass","fail"]},"problems":{"type":"array","items":{"type":"string"}}},"required":["scene","verdict","problems"]}},"required_fixes":{"type":"array","items":{"type":"string"}}},"required":["approved","summary","scenes","required_fixes"]}'

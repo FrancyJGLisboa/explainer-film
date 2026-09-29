@@ -23,6 +23,11 @@ Read `plan-packet.md` in the current directory.
    relies on text to carry the idea.
 7. **No arc.** The scenes don't go hook → mechanism → insight/result → limits (or an equally clear structure).
 
+## Proportion (this is a 15-60 s social video, not a paper)
+- Block what would **mislead or confuse a viewer**: a wrong ratio, order or mechanism on screen, a label that contradicts the picture, a colour that means two things.
+- Tests: one real, computed test per key claim is enough. Don't demand simulations or checks of things the viewer can't see (per-pixel physics, exact citations for textbook facts marked common knowledge).
+- **Approve with conditions** when what remains are local corrections that don't change any scene's design (a number, a label, a test window, a colour swap): set `approved` true and list them in `required_fixes`; the film reviewer will check each one on screen.
+
 ## Verdict rules
 - **Blocking** problems are only the seven types above. Better ideas that are not required go in `suggestions`.
 - `approved` is true only if nothing blocks. When unsure whether something blocks, it blocks.

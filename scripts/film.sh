@@ -95,7 +95,7 @@ case "$cmd" in
     } > "$W/plan-packet.md"
     h=$(hash16 "$d/brief.md")
     echo "reviewing the plan with an independent reviewer (about 1 min)..."
-    sh "$HERE/judge.sh" "$W" "$ROOT/references/plan-reviewer.md" plan-packet.md "$V/plans/$h.json" "$V/plan_$slug" ;;
+    CAP=5 sh "$HERE/judge.sh" "$W" "$ROOT/references/plan-reviewer.md" plan-packet.md "$V/plans/$h.json" "$V/plan_$slug" ;;   # plans are cheap: 5 rounds
   review)
     d=$(cd "$1" && pwd); slug=$(basename "$d"); V=$HOME/.cache/explainer-film/verdicts; mkdir -p "$V"
     # the film review needs an approved plan for the current brief (REVIEW_ANYWAY=1 is for calibrating the reviewer only)
@@ -105,6 +105,12 @@ case "$cmd" in
       if ! out=$(sh "$0" check "$d" 5 2>&1); then echo "$out" | grep -vE '^(contact sheet|CLEAN: /)'; echo "REFUSED: review runs only on a film that passes film.sh check."; exit 1; fi
     fi
     sh "$HERE/build.sh" "$d" >/dev/null; cd "$RUN" && node "$HERE/review.mjs" "$d" || exit 1
+    python3 - "$V/plans/$bh.json" "$d/qc/review/packet.md" <<'PY' 2>/dev/null || true
+import json, sys
+v = json.load(open(sys.argv[1])); c = v.get("required_fixes") or []
+if v.get("approved") and c:
+    open(sys.argv[2], "a").write("\n## Plan conditions (the plan was approved with these fixes; check each on screen)\n\n" + "\n".join("- " + x for x in c) + "\n")
+PY
     h=$(hash16 "$d/piece.html")
     echo "reviewing $(ls "$d/qc/review"/*.jpg | wc -l | tr -d ' ') stills with an independent reviewer (about 1-3 min)..."
     sh "$HERE/judge.sh" "$d/qc/review" "$ROOT/references/reviewer.md" packet.md "$V/$h.json" "$V/film_$slug" ;;
