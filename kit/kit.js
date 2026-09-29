@@ -94,6 +94,7 @@ function motes(t, n = 70) {                       // slow drifting specks: the o
 function kine(str, x, y, t, at, out, o = {}) {
   let { size = 72, col = TEXT, align = 'left', w = 800, stagger = .07, id = str, maxW = null } = o;
   WORD_LOG.add(str);
+  str = str.replace(/\{([^{}|]+)\|(#[0-9a-fA-F]{3,8})\}/g, (m, words, hex) => words.split(' ').map(w2 => `{${w2}|${hex}}`).join(' '));   // {two words|#hex} -> {two|#hex} {words|#hex}
   if (t < at || t > out + 1) return;
   ctx.save(); ctx.font = SANS(size, w); ctx.textBaseline = 'alphabetic';
   { const room = maxW ?? (align === 'center' ? 2 * Math.min(x - SAFE.x0, SAFE.x1 - x) : align === 'right' ? x - SAFE.x0 : SAFE.x1 - x), tw = ctx.measureText(str.replace(/[*{}]|\|#[0-9a-fA-F]{3,8}/g, '')).width;
@@ -358,10 +359,10 @@ function card(x, y, s, pic, o = {}) {             // an example / document / pho
   if (mark) stamp(98, -128, 40, mark === 'ok', markP);
   ctx.restore();
 }
-function stamp(x, y, r, ok, p) {                  // ✓ / ✗ lands like a rubber stamp
+function stamp(x, y, r, ok, p, col = null) {      // ✓ / ✗ lands like a rubber stamp (col overrides the disc colour)
   if (p <= 0) return;
   const k = lerp(1.7, 1, easeOut(p)); ctx.save(); ctx.translate(x, y); ctx.scale(k, k); ctx.rotate(ok ? -.12 : .12);
-  circ(0, 0, r, ok ? THREAD : WRONG);
+  circ(0, 0, r, col || (ok ? THREAD : WRONG));
   if (ok) strokeLine([[-r * .42, 0], [-r * .1, r * .32], [r * .45, -r * .34]], DEEP, r * .2);
   else { strokeLine([[-r * .35, -r * .35], [r * .35, r * .35]], TEXT, r * .2); strokeLine([[r * .35, -r * .35], [-r * .35, r * .35]], TEXT, r * .2); }
   ctx.restore();
@@ -396,10 +397,10 @@ function keyTip(kind, s, col) {                   // a small key shape at the lo
   else { ctx.arc(0, -s * .6, s * .8, 0, 7); }
   ctx.fill();
 }
-function pathogen(x, y, r, col, o = {}) {         // a spiky particle; each spike ends in its key shape. o.hit (0..1) squashes it as it is destroyed
+function pathogen(x, y, r, col, o = {}) {         // a spiky particle; each spike ends in its key shape (kind, or an array: one kind per spike, e.g. a variant). o.hit (0..1) squashes it as it is destroyed
   const { kind = 'tri', spikes = 9, t = 0, hit = 0 } = o, k = 1 - hit * .4;
   ctx.save(); ctx.translate(x, y); ctx.rotate(t * .3); ctx.scale(k, k);
-  for (let i = 0; i < spikes; i++) { ctx.save(); ctx.rotate(i / spikes * 6.2832); strokeLine([[0, -r * .9], [0, -r * 1.35]], tint(col, .8), r * .12); ctx.translate(0, -r * 1.35); keyTip(kind, r * .18, tint(col, 1.2)); ctx.restore(); }
+  for (let i = 0; i < spikes; i++) { ctx.save(); ctx.rotate(i / spikes * 6.2832); strokeLine([[0, -r * .9], [0, -r * 1.35]], tint(col, .8), r * .12); ctx.translate(0, -r * 1.35); keyTip(Array.isArray(kind) ? kind[i % kind.length] : kind, r * .18, tint(col, 1.2)); ctx.restore(); }
   circ(0, 0, r, col); circ(-r * .3, -r * .3, r * .28, tint(col, 1.25)); ctx.restore();
 }
 function spikeTip(x, y, r, i, o = {}) {           // where spike i of pathogen(x, y, r) ends (to aim an antibody at it)
@@ -421,8 +422,8 @@ function bindTo(px, py, r, i, p, col, o = {}) {    // an antibody flies in and c
   if (p > 0) antibody(x, y, s, a - Math.PI / 2, col, { kind });   // arms face the pathogen
   return p >= 1;
 }
-function burst(x, y, t, at, col, r = 60) {        // something is destroyed: pieces fly out and shrink (no fade)
-  const u = t - at; if (u < 0 || u > 1.2) return;
+function burst(x, y, t, at, col, r = 60, dur = 1.2) {  // something is destroyed: pieces fly out and shrink (no fade); dur in seconds
+  const u = (t - at) * 1.2 / dur; if (u < 0 || u > 1.2) return;
   for (let i = 0; i < 14; i++) { const a = i / 14 * 6.2832 + hash2(i, 3), v = r * (2 + hash2(i, 4) * 2);
     circ(x + Math.cos(a) * v * u, y + Math.sin(a) * v * u, r * .18 * (1 - u / 1.2), col); }
   ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = 6 * (1 - u / 1.2); ctx.beginPath(); ctx.arc(x, y, r * (1 + u * 2), 0, 7); ctx.stroke(); ctx.restore();

@@ -28,7 +28,21 @@ def top_args(a):
 
 m = re.search(r"function\s+world\s*\(", code)
 world = balanced(code, code.index("{", m.end()), "{", "}") if m else ""
-world_ids = set(re.findall(r"[A-Za-z_]\w*", world))
+# follow the helper functions world() calls (and those they call), so drawing through a helper counts
+fn_bodies = {}
+for fm in re.finditer(r"function\s+([A-Za-z_]\w*)\s*\(", code):
+    j = code.find("{", fm.end())
+    if j > 0: fn_bodies[fm.group(1)] = balanced(code, j, "{", "}")
+for fm in re.finditer(r"(?:const|let)\s+([A-Za-z_]\w*)\s*=\s*(?:\([^)]*\)|[A-Za-z_]\w*)\s*=>", code):
+    rest = code[fm.end():]; fn_bodies.setdefault(fm.group(1), rest[:rest.find(";\n") if ";\n" in rest else 400])
+seen, todo, body = set(), ["world"], world
+while todo:
+    f = todo.pop()
+    if f in seen: continue
+    seen.add(f); txt = world if f == "world" else fn_bodies.get(f, "")
+    body += "\n" + txt
+    todo += [c for c in re.findall(r"([A-Za-z_]\w*)\s*\(", txt) if c in fn_bodies and c not in seen]
+world_ids = set(re.findall(r"[A-Za-z_]\w*", body))
 GENERIC = set("Math true false null undefined SC DUR BEAT BPM b bend prog lerp ease easeOut back clamp abs min max pow exp log sqrt every some length map filter reduce from to at t W H i k u v x y".split())
 bad = []
 for mm in re.finditer(r"\bshows\s*\(", code):

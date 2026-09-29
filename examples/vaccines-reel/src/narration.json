@@ -1,0 +1,36 @@
+{
+ "voice": "af_heart",
+ "speed": 0.92,
+ "lang": "en-us",
+ "lines": [
+  {
+   "scene": "hook",
+   "text": "A virus gets in... and copies itself, fast.",
+   "delay": 0.4
+  },
+  {
+   "scene": "vaccine",
+   "text": "A vaccine shows your body a harmless copy. Same spikes, but it can't multiply."
+  },
+  {
+   "scene": "select",
+   "text": "Only the immune cell whose shape fits locks on."
+  },
+  {
+   "scene": "multiply",
+   "text": "It multiplies, and makes antibodies that grab the copies."
+  },
+  {
+   "scene": "memory",
+   "text": "When it's over, a few cells stay behind... as memory."
+  },
+  {
+   "scene": "real",
+   "text": "If the real virus shows up, memory cells know it at once, and stop it early."
+  },
+  {
+   "scene": "limits",
+   "text": "But viruses change, and protection fades. That's what boosters are for."
+  }
+ ]
+}

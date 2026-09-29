@@ -53,7 +53,7 @@ Music layers: pad, pluck, hat8, kick2, kick4, bassHalf, clap. Harmonies: bright,
 ## Interaction (show contact, then the result)
 | call | notes |
 |---|---|
-| `pathogen(x, y, r, col, {kind, spikes, t, hit})` | spiky particle; each spike ends in a key of `kind` ('tri' / 'square' / 'round'); `hit` 0..1 squashes it |
+| `pathogen(x, y, r, col, {kind, spikes, t, hit})` | spiky particle; each spike ends in a key of `kind` ('tri' / 'square' / 'round'), or `kind` as an array for one kind per spike (a variant); `hit` 0..1 squashes it |
 | `spikeTip(x, y, r, i, {spikes, t})` | `[x, y, angle]` where spike i ends: aim things at it |
 | `antibody(x, y, s, rot, col, {kind})` | a Y whose tips are locks that fit keys of the same `kind` (a true "fits only its match") |
 | `bindTo(px, py, r, i, p, col, {kind, spikes, t, from, s})` | the whole contact move: an antibody flies in and locks its arms onto spike i. Returns true once locked |
