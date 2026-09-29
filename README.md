@@ -50,7 +50,7 @@ fit it. The music is lowered under the voice automatically, and a music-only cut
 ## What the checks catch
 `scripts/check.mjs`, run by `film.sh check`, fails the build on:
 - **pictures that contradict their words**: each reality-map row has a test the code runs on what it draws (`shows(...)`). "It explodes" has to mean the curve ends at least 5× steeper than it starts
-- **empty frames**: a small graph floating in empty space fails (median frame fill ≥ 16%)
+- **empty frames**: a small graph floating in empty space fails. Fill is measured with the hero hidden, so a giant character can't stand in for a missing diagram
 - **text over art**: a headline drawn across a curve or a shape
 - text that is hard to read against what is actually behind it (it hides the words and measures the pixels behind them)
 - text in corners, or running off the frame

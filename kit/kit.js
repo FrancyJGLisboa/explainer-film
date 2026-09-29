@@ -19,7 +19,7 @@ function bend(fn, u0, u1, k = .05) {             // end slope / start slope: 1 =
 function fits(label, start, end, lo, hi) {        // assert an action [start, end] happens inside its scene [lo, hi]
   if (start < lo - 1e-6 || end > hi + 1e-6) CHECKS.push(`${label}: runs ${start.toFixed(2)}-${end.toFixed(2)}s, outside its scene ${lo.toFixed(2)}-${hi.toFixed(2)}s`);
 }
-let HIDE_WORDS = false, HIDE_BACKDROP = false;   // qc toggles these                           // qc sets this to read what is behind the words
+let HIDE_WORDS = false, HIDE_BACKDROP = false, HIDE_HERO = false;   // qc toggles these (fill is measured without backdrop and hero)                           // qc sets this to read what is behind the words
 const WORD_LOG = new Set();                       // every headline string used (qc checks length)
 function claimText(id, x, y, w, h, col, own = false) { claim(id, 'text', x, y, w, h); const L = LAYOUT[LAYOUT.length - 1]; L.col = col; L.own = own; }
 
@@ -180,8 +180,8 @@ function blob(x, y, s, st = {}) {
   // state: grow, mood (plain|happy|sad|think|surprised|worried|excited), look (-1..1), blink, tilt, squash,
   // walk (step phase: pass t * 2 for ~2 steps/s; 0 = standing), talk (0..1 mouth open: voiceLevel(t)),
   // armL/armR (0 down .. 2.4 up), waveR (pass t to wave the right arm), winkR, body, belly
-  const { grow = 1, mood = 'plain', look = 0, blink = 0, tilt = 0, squash = 0, body = HERO, belly = null, armL = 0, armR = 0, winkR = 0, walk = 0, talk = 0, waveR = false } = st;
-  if (grow <= 0) return;
+  const { grow = 1, mood = 'plain', look = 0, blink = 0, tilt = 0, squash = 0, body = HERO, belly = null, armL = 0, armR = 0, winkR = 0, walk = 0, talk = 0, waveR = false, member = false } = st;
+  if (grow <= 0 || (HIDE_HERO && !member)) return;
   const stepA = Math.sin(walk * Math.PI), bob = walk ? Math.abs(stepA) * 10 : 0, lean = walk ? .05 : 0;
   ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
   ell(0, 4, 130 * grow * (1 - bob * .01), 18 * grow, 0, 'rgba(5,10,25,.4)');
@@ -226,14 +226,14 @@ function crowd(x, y, w, h, n, t, o = {}) {        // n small creatures in a loos
   const marked = new Set(order.slice(0, mark));
   for (let i = 0; i < n; i++) { const q = back(prog(p, i / n * .6, i / n * .6 + .4)); if (q <= 0) continue;
     const cx = x + (i % cw + .5) * gx + (hash2(i, seed + 1) - .5) * gx * .25, cy = y + (Math.floor(i / cw) + 1) * gy - (hash2(i, seed + 2)) * gy * .1;
-    blob(cx, cy, sc * q, { body: marked.has(i) ? markCol : cols[i % cols.length], mood, blink: blinkAt(t + hash2(i, 3) * 9), look: Math.sin(t + i) * .5, squash: .03 * Math.sin(t * 4 + i) }); }
+    blob(cx, cy, sc * q, { member: true, body: marked.has(i) ? markCol : cols[i % cols.length], mood, blink: blinkAt(t + hash2(i, 3) * 9), look: Math.sin(t + i) * .5, squash: .03 * Math.sin(t * 4 + i) }); }
   LAYOUT = LAYOUT.filter(L => L.id !== 'hero' || L.w > 200);      // the crowd's members don't claim layout space individually
   claim('crowd', 'keep', x, y, w, h);
 }
 const DIALS = [[-48, -132], [0, -132], [48, -132], [-24, -88], [24, -88]];
 function robot(x, y, s, st = {}) {                // Bit: screen face, chest panel with a meter and 5 dials (weights, knobs, settings)
   const { grow = 1, eyeR = 1, blink = 0, mood = 'plain', tilt = 0, look = 0, dials = [0, 0, 0, 0, 0], meter = 0, dialGlow = 0, armL = 0, armR = 0, squash = 0, antenna = 0, winkR = 0, body = HERO } = st;
-  if (grow <= 0) return;
+  if (grow <= 0 || HIDE_HERO) return;
   const bodyD = tint(body, .9);
   ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
   ell(0, 4, 150 * grow, 20 * grow, 0, 'rgba(5,10,25,.4)');
@@ -371,7 +371,7 @@ function frameAt(frame) {
 function finish() {                               // call once at the end of scenes.js
   VO = narrationPlan();
   VO.forEach(v => { const sc = SC[v.scene]; if (v.to > sc.to - .1) CHECKS.push(`narration: a "${v.scene}" line ends at ${v.to.toFixed(2)}s, after its scene ends at ${sc.to.toFixed(2)}s; give "${v.scene}" ${Math.ceil((v.to - sc.to + .35) / BEAT)} more beats`); });
-  window.NARRATION_PLAN = VO.map(v => ({ file: v.file, at: v.at }));
+  window.NARRATION_PLAN = VO.map(v => ({ file: v.file + '.wav', at: v.at }));
   if (Math.abs(SC._beats * BEAT - DUR) > .01) CHECKS.push(`storyboard is ${SC._beats} beats = ${(SC._beats * BEAT).toFixed(3)}s but DUR = ${DUR}s: set DUR = ${+(SC._beats * BEAT).toFixed(4)} in src/head.js (or change the beats)`);
   const bars = Math.round(DUR / (4 * BEAT)); let edge = 0;   // music must cover every bar, in order (1 bar = 4 beats)
   SECTIONS.forEach(([a, z]) => { if (a !== edge) CHECKS.push(`SECTIONS: bar ${edge} to ${a} has no music (sections must be contiguous from bar 0)`); edge = z; });
@@ -386,6 +386,6 @@ function finish() {                               // call once at the end of sce
   window.draw = frameAt; window.FRAMES = FRAMES; window.FPS = FPS;
   window.CUES = SHOTS.slice(1).map(s => s.from);
   window.CHECKS = CHECKS; window.getWords = () => [...WORD_LOG];
-  window.setHideWords = v => { HIDE_WORDS = v; }; window.setHideBackdrop = v => { HIDE_BACKDROP = v; }; window.BG_HEX = BG;
+  window.setHideWords = v => { HIDE_WORDS = v; }; window.setHideBackdrop = v => { HIDE_BACKDROP = v; }; window.setHideHero = v => { HIDE_HERO = v; }; window.BG_HEX = BG;
   window.SCORE = ac => buildGroove(ac, { dur: DUR, bpm: BPM, sections: SECTIONS, events: EVENTS, ...MUSIC });
 }

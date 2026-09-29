@@ -49,7 +49,7 @@ function world(t) {
   if (t < SC.naive.from + 1) {
     const out = ease(prog(t, SC.naive.from, SC.naive.from + .8));
     for (let k = 0; k < 32; k++) { const gen = Math.ceil(Math.log2(k + 1)), p = back(prog(t, b(1.5 + gen * .5), b(1.9 + gen * .5)));
-      if (p > 0) circ(830 + (k % 16) * 62, 700 + Math.floor(k / 16) * 70 + out * 700, 20 * p, gen === 5 ? VAR.yellow : THREAD); }
+      if (p > 0) circ(840 + (k % 8) * 125, 640 + Math.floor(k / 8) * 110 + out * 900, 34 * p, gen === 5 ? VAR.yellow : THREAD); }
   }
   // naive -> mechanism: the same bars, re-grown by a different rule (morph, not a cut)
   if (t > SC.naive.from && t < SC.build.from + 1) {
@@ -61,8 +61,8 @@ function world(t) {
   }
   // build: both rules as curves on one set of axes
   if (t > SC.build.from) {
-    const k = lerp(1, .5, ease(prog(t, SC.loop.from, SC.loop.from + 1)));   // loop: the chart shrinks into the lower right, still true
-    ctx.save(); ctx.translate(1820, 890); ctx.scale(k, k); ctx.translate(-1820, -890);
+    const k = lerp(1, .62, ease(prog(t, SC.loop.from, SC.loop.from + 1)));   // loop: the chart settles into the lower right, still true
+    ctx.save(); ctx.translate(1820, 960); ctx.scale(k, k); ctx.translate(-1820, -890);
     grid(780, 250, 1040, 640, 65, prog(t, SC.build.from, SC.build.from + 1.5));   // 3b1b coordinate plane
     AX.draw(prog(t, SC.build.from + .2, SC.build.from + 1.2));
     plot(AX, lin, 0, 16, prog(t, b(30), b(36)), VAR.blue);
@@ -81,7 +81,7 @@ function words(t) {
   kine('Add the {same|#58c4dd} each step.', 800, 170, t, b(6.6), b(15.6), { size: 72 });
   kine('Grow by a {share|#f4d35e} of itself.', 800, 170, t, b(16.6), b(27.6), { size: 72 });
   eq([['s', VAR.yellow], [' = '], ['1.35', TEXT], ['^t', MUTED]], 1000, 190, t, b(29), b(41.6), { size: 84 });
-  kine('Slow, then *sudden.*', 1000, 960, t, b(44), b(51.4), { size: 84 });
+  kine('Slow, then *sudden.*', 1080, 230, t, b(44), b(51.4), { size: 84 });
   kine('Real growth hits {limits.|#83c167}', 800, 170, t, b(56.2), b(61.6), { size: 72 });
   kine('Same rule,', 800, 330, t, b(63), DUR + 5, { size: 110 });
   kine('every *step.*', 800, 470, t, b(63.8), DUR + 5, { size: 110 });

@@ -80,7 +80,10 @@ Music layers: pad, pluck, hat8, kick2, kick4, bassHalf, clap. Harmonies: bright,
 | `glove(x, y, rot)` | a helper's hand |
 | `confetti(t, at, x, y)` | a burst that shrinks away |
 | `thread(x, y, r)` | the one continuous shape: a glowing dot |
-| `circ`, `ell`, `rr`, `tri`, `strokeLine`, `glow` | flat primitives |
+| `circ(x, y, r, col)`, `ell(x, y, rx, ry, rot, col)`, `rr(x, y, w, h, radius, col)`, `tri(x1, y1, x2, y2, x3, y3, col)` | flat filled shapes |
+| `strokeLine([[x, y], ...], col, width)` | a round-capped polyline (use it for antibody Y-shapes, rays, links) |
+| `glow(x, y, r, 'r,g,b', alpha)` | soft light |
+| `ctx.roundRect(...)` | the standard canvas API: works in every browser the renderer uses |
 
 ## Palette (src/head.js)
 `BG, DEEP, DISC, TEXT, MUTED, THREAD, WRONG, HERO, CARD`, plus `VAR.{blue, yellow, green, gold, red, purple, teal}` (3b1b colours).

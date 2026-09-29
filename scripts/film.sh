@@ -51,13 +51,13 @@ case "$cmd" in
     d=$(cd "$1" && pwd); sh "$HERE/build.sh" "$d" >/dev/null
     cd "$RUN"
     node "$JA/render.mjs" "$d/piece.html" "$d/qc/sheet.jpg" --sheet "${2:-1.5}" | tail -1
-    node "$JA/asset-audit.mjs" "$d/piece.html" | tail -1
     s=0
     out=$(node "$JA/layout-check.mjs" "$d/piece.html") || s=1; echo "$out" | tail -4
     node "$HERE/check.mjs" "$d/piece.html" || s=1
     # claim tests must test something: a constant condition is a fake pass
-    fake=$(grep -nE "shows\([^;]*,[[:space:]]*(true|1|!0)[[:space:]]*[,)]" "$d/src/scenes.js" || true)
-    [ -z "$fake" ] || { echo "fake claim test: shows(..., true) passes without testing the picture; compute the condition from the numbers you draw:"; echo "$fake"; s=1; }
+    python3 "$HERE/lint.py" "$d/src/scenes.js" || s=1
+    # zero assets: nothing loaded, nothing referenced (the upstream audit's verdict counts)
+    node "$JA/asset-audit.mjs" "$d/piece.html" | grep -q "NOT zero-asset" && { echo "assets: the page references files; it must compute everything (run asset-audit.mjs for details)"; s=1; }
     # the scaffold is a demo about generic growth: a film must replace it, not re-label it
     sim=$(python3 -c "import difflib,sys; a=open(sys.argv[1]).read().splitlines(); b=open(sys.argv[2]).read().splitlines(); print(round(difflib.SequenceMatcher(None,a,b).ratio()*100))" "$d/src/scenes.js" "$ROOT/kit/scenes.template.js")
     if [ "$sim" -gt 50 ]; then echo "template reuse: src/scenes.js is ${sim}% identical to the demo template; rewrite the scenes for this film's topic (keep the structure, replace the content)"; s=1; fi

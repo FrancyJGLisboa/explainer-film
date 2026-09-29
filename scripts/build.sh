@@ -12,7 +12,8 @@ TITLE=$(sed -n 's#^// TITLE: ##p' "$F/src/head.js" | head -1)
   sed -n '1,16p' "$S" | sed -e "s#<title>Untitled animation</title>#<title>${TITLE:-Explainer}</title>#" -e 's#canvas{width:min(100vw,100vh);height:auto;max-height:100vh}#canvas{max-width:100vw;max-height:100vh}#'
   cat "$F/src/head.js"
   sed -n '37,262p' "$S"
-  if [ -f "$F/voice/timing.json" ]; then printf "const NARRATION = "; cat "$F/voice/timing.json"; echo ";"; else echo "const NARRATION = null;"; fi
+  # narration timing; file names lose their extension so the page references no files
+  if [ -f "$F/voice/timing.json" ]; then printf "const NARRATION = "; sed 's/\.wav"/"/' "$F/voice/timing.json"; echo ";"; else echo "const NARRATION = null;"; fi
   if [ -f "$F/src/tex.json" ]; then node "$(dirname "$0")/tex.mjs" "$F" >&2; printf "const TEXPATHS = "; cat "$F/tex/paths.json"; echo ";"; else echo "const TEXPATHS = null;"; fi
   cat "$K/kit.js" "$K/worlds.js" "$K/tex.js"
   cat "$F/src/scenes.js"

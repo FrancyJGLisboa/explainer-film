@@ -61,7 +61,8 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
 **4. Scenes (`src/scenes.js`).** The scaffold is a demo about generic growth. **Rewrite every scene for this film's topic**: keep the structure (grid, composition, checks), replace all the content. `film.sh check` fails a film that is more than 50% identical to the template, or whose headlines never mention the title's topic.
 - `SC = scenes([name, beats], ...)` summing to DUR, plus `MUSIC`, `SECTIONS` (bars), one `SHOTS` camera per scene, and `EVENTS` (one sfx per visible action, on beats).
 - Scene names are identifiers (letters, digits, `_`): they become `SC.name`.
-- `shows(label, condition)` for every reality-map test. Draw from the same functions you test (the template's `lin`/`expo`/`logi`), so the check is about the picture itself.
+- `shows(label, condition)` for every reality-map test. Draw from the same functions you test (the template's `lin`/`expo`/`logi`). `film.sh check` rejects constant conditions (`true`) and conditions that use nothing `world()` draws: "checked visually" is not a test.
+- Don't game the checks: shrinking the explanation while text shows, parking words at the frame edge, or blowing up the hero to fill the frame are failures of the film even if a check passes. Frame fill is measured with the hero hidden: the explanation itself must fill the frame.
 - `fits(label, start, end, SC.x.from, SC.x.to)` for every timed list (montages, staggered items). This catches actions that overrun their scene.
 - **Composition** (checked by frame fill):
   - 16:9: hero on the left third at s ≥ 1.1, on its DISC; the main visual fills the right two thirds (about x 780–1820, y 250–900).
@@ -84,7 +85,7 @@ Kit parts:
 - corners and off-frame text
 - overruns (`fits`), claims (`shows`) and storyboard/music coverage
 - lines over 8 words
-- frame fill (the median frame uses at least 16% of the frame)
+- frame fill (with the hero hidden, the explanation fills at least 10% of the frame)
 
 Then open `qc/sheet.jpg` and answer this in writing, scene by scene, fixing every "no":
 1. Does the picture show what the words say? (If the words say "explodes", does the curve visibly explode?)

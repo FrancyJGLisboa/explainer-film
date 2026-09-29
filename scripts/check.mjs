@@ -5,7 +5,8 @@
 //  3. corners: no text parked in a corner; no text running off the frame
 //  4. headline length: 8 words max per line
 //  5. text over art: a headline drawn across lines/shapes (not just low contrast)
-//  6. frame fill: share of 40 px cells with anything drawn in them (thin 3b1b lines count): median >= 16%, no run of 4 s+ below 8%
+//  6. frame fill, measured with backdrop AND hero hidden (the explanation alone): share of 40 px cells with anything drawn
+//     (thin 3b1b lines count): median >= 10%, no run of 4 s+ below 4%. Calibrated: passing template 13%, weak agent films 2-7%.
 // Exit 1 on any failure. Run from ~ so playwright resolves.
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
@@ -37,8 +38,10 @@ const res = await page.evaluate(EVERY => {
     if (window.setHideBackdrop) window.setHideBackdrop(true);
     window.draw(Math.round(t * window.FPS));
     const bare = x.getImageData(0, 0, W, H).data;             // no backdrop: what the film itself draws
+    let explain = bare;                                         // no backdrop, no hero: the explanation alone (frame fill)
+    if (window.setHideHero && t - lastFill >= 1 - 1e-9) { window.setHideHero(true); window.draw(Math.round(t * window.FPS)); explain = x.getImageData(0, 0, W, H).data; window.setHideHero(false); }
     if (window.setHideBackdrop) { window.setHideBackdrop(false); window.draw(Math.round(t * window.FPS)); }
-    if (t - lastFill >= 1 - 1e-9) { lastFill = t; const d = bare, CELL = 40, occ = new Set();
+    if (t - lastFill >= 1 - 1e-9) { lastFill = t; const d = explain, CELL = 40, occ = new Set();
       for (let y = 0; y < H; y += 3) for (let xx = 0; xx < W; xx += 3) if (isInk(d, (y * W + xx) * 4)) occ.add(Math.floor(y / CELL) * 1000 + Math.floor(xx / CELL));
       out.fill.push([+t.toFixed(2), occ.size / (Math.ceil(W / CELL) * Math.ceil(H / CELL))]); }
     for (const L of window.LAYOUT || []) {
@@ -82,8 +85,8 @@ Object.entries(res.corner).forEach(([k, ts]) => fails.push(`corner: "${k}" sits 
 Object.entries(res.off).forEach(([k, ts]) => fails.push(`off-frame: "${k}" runs off the frame at ${span(ts)}`));
 Object.entries(res.over).forEach(([k, ts]) => fails.push(`text over art: "${k}" is drawn across lines or shapes at ${span(ts)}; move it to empty space`));
 const fl = res.fill.map(f => f[1]).sort((a, b) => a - b), med = fl[Math.floor(fl.length / 2)] || 0;
-if (med < .16) fails.push(`frame fill: the median frame uses only ${(med * 100).toFixed(0)}% of the frame (need >= 16%): scale up the hero and the main visual, spread the diagram across the free two thirds`);
-let run = []; for (const [t, v] of [...res.fill, [1e9, 1]]) { if (v < .08) run.push(t); else { if (run.length >= 4) fails.push(`frame fill: nearly empty frames from ${run[0]}s to ${run[run.length - 1]}s`); run = []; } }
+if (med < .10) fails.push(`frame fill: with the hero hidden, the median frame uses only ${(med * 100).toFixed(0)}% of the frame for the explanation (need >= 10%): make the diagram bigger and spread it across the free two thirds (enlarging the hero does not count)`);
+let run = []; for (const [t, v] of [...res.fill, [1e9, 1]]) { if (v < .04) run.push(t); else { if (run.length >= 4) fails.push(`frame fill: nearly empty frames from ${run[0]}s to ${run[run.length - 1]}s`); run = []; } }
 // on topic: at least one content word of the film's title must appear on screen
 const STOP = new Set('a an and the of to in on for why how what is are it its with from by at as then feels suddenly slow fast explainer video film about into'.split(' '));
 const norm = s => s.toLowerCase().replace(/[^a-z0-9à-ÿ ]/g, ' ');
