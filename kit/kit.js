@@ -63,11 +63,21 @@ const WORD_LOG = new Set();                       // every headline string used 
 function claimText(id, x, y, w, h, col, own = false) { claim(id, 'text', x, y, w, h); const L = LAYOUT[LAYOUT.length - 1]; L.col = col; L.own = own; }
 
 // ---------- flat shapes ----------
-function circ(x, y, r, col) { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, Math.max(0, r), 0, 7); ctx.fill(); }
-function ell(x, y, rx, ry, rot, col) { ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(x, y, Math.max(0, rx), Math.max(0, ry), rot, 0, 7); ctx.fill(); }
-function rr(x, y, w, h, r, col) { ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill(); }
-function tri(a, c, d, e, f, g, col) { ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(a, c); ctx.lineTo(d, e); ctx.lineTo(f, g); ctx.closePath(); ctx.fill(); }
-function strokeLine(pts, col, w) { if (pts.length < 2) return; ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(...pts[0]); pts.slice(1).forEach(p => ctx.lineTo(...p)); ctx.stroke(); }
+// a colour that doesn't exist (VAR.gray, a typo, null) makes the canvas silently reuse the last colour: fail loudly instead
+function okCol(col, fn) {
+  if (typeof col === 'string' || (col && typeof col === 'object' && 'addColorStop' in col)) return true;
+  if (!CHECKS.some(c => c.startsWith(`colour: ${fn}`))) CHECKS.push(`colour: ${fn}() was given ${col === undefined ? 'undefined' : JSON.stringify(col)} instead of a colour; use a palette name that exists (BG, DEEP, DISC, TEXT, MUTED, THREAD, WRONG, HERO, CARD, VAR.${Object.keys(VAR).join('/')}) or a '#hex' string`);
+  return false;
+}
+function circ(x, y, r, col, stroke = null) {      // stroke: [colour, width] draws an outline (col may be null for outline only)
+  if (col !== null && okCol(col, 'circ')) { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, Math.max(0, r), 0, 7); ctx.fill(); }
+  if (stroke && okCol(stroke[0], 'circ stroke')) { ctx.strokeStyle = stroke[0]; ctx.lineWidth = stroke[1] ?? 4; ctx.beginPath(); ctx.arc(x, y, Math.max(0, r), 0, 7); ctx.stroke(); }
+  if (col === null && !stroke) okCol(col, 'circ');
+}
+function ell(x, y, rx, ry, rot, col) { if (!okCol(col, 'ell')) return; ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(x, y, Math.max(0, rx), Math.max(0, ry), rot, 0, 7); ctx.fill(); }
+function rr(x, y, w, h, r, col) { if (!okCol(col, 'rr')) return; ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fill(); }
+function tri(a, c, d, e, f, g, col) { if (!okCol(col, 'tri')) return; ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(a, c); ctx.lineTo(d, e); ctx.lineTo(f, g); ctx.closePath(); ctx.fill(); }
+function strokeLine(pts, col, w) { if (pts.length < 2 || !okCol(col, 'strokeLine')) return; ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(...pts[0]); pts.slice(1).forEach(p => ctx.lineTo(...p)); ctx.stroke(); }
 function thread(x, y, r = 16, col = THREAD) {    // the one shape that runs through the film
   const rgb = rgbOf(col).join(','); glow(x, y, r * 3, rgb, .35); circ(x, y, r, col); circ(x - r * .3, y - r * .3, r * .28, 'rgba(255,255,255,.7)');
 }
