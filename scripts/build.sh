@@ -13,7 +13,7 @@ TITLE=$(sed -n 's#^// TITLE: ##p' "$F/src/head.js" | head -1)
   cat "$F/src/head.js"
   sed -n '37,262p' "$S"
   if [ -f "$F/voice/timing.json" ]; then printf "const NARRATION = "; cat "$F/voice/timing.json"; echo ";"; else echo "const NARRATION = null;"; fi
-  cat "$K/kit.js"
+  cat "$K/kit.js" "$K/worlds.js"
   cat "$F/src/scenes.js"
   cat "$G"
   sed -n '300,$p' "$S"

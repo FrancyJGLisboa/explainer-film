@@ -19,7 +19,7 @@ function bend(fn, u0, u1, k = .05) {             // end slope / start slope: 1 =
 function fits(label, start, end, lo, hi) {        // assert an action [start, end] happens inside its scene [lo, hi]
   if (start < lo - 1e-6 || end > hi + 1e-6) CHECKS.push(`${label}: runs ${start.toFixed(2)}-${end.toFixed(2)}s, outside its scene ${lo.toFixed(2)}-${hi.toFixed(2)}s`);
 }
-let HIDE_WORDS = false;                           // qc sets this to read what is behind the words
+let HIDE_WORDS = false, HIDE_BACKDROP = false;   // qc toggles these                           // qc sets this to read what is behind the words
 const WORD_LOG = new Set();                       // every headline string used (qc checks length)
 function claimText(id, x, y, w, h, col, own = false) { claim(id, 'text', x, y, w, h); const L = LAYOUT[LAYOUT.length - 1]; L.col = col; L.own = own; }
 
@@ -177,29 +177,58 @@ function writeOn(pts, p, col, fillCol = null, lw = 5) {   // 3b1b "draw border, 
 // blob: the default character (a round creature). robot: for tech topics. Same state API for both:
 // { grow, mood: plain|happy|sad|think, look (-1..1), blink (0..1), tilt, squash, armL, armR, winkR, body, belly }
 function blob(x, y, s, st = {}) {
-  const { grow = 1, mood = 'plain', look = 0, blink = 0, tilt = 0, squash = 0, body = HERO, belly = null, armL = 0, armR = 0, winkR = 0 } = st;
+  // state: grow, mood (plain|happy|sad|think|surprised|worried|excited), look (-1..1), blink, tilt, squash,
+  // walk (step phase: pass t * 2 for ~2 steps/s; 0 = standing), talk (0..1 mouth open: voiceLevel(t)),
+  // armL/armR (0 down .. 2.4 up), waveR (pass t to wave the right arm), winkR, body, belly
+  const { grow = 1, mood = 'plain', look = 0, blink = 0, tilt = 0, squash = 0, body = HERO, belly = null, armL = 0, armR = 0, winkR = 0, walk = 0, talk = 0, waveR = false } = st;
   if (grow <= 0) return;
+  const stepA = Math.sin(walk * Math.PI), bob = walk ? Math.abs(stepA) * 10 : 0, lean = walk ? .05 : 0;
   ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
-  ell(0, 4, 130 * grow, 18 * grow, 0, 'rgba(5,10,25,.4)');
-  ctx.scale(grow * (1 + squash), grow * (1 - squash)); ctx.rotate(tilt);
-  ell(-40, -8, 26, 14, 0, tint(body, .7)); ell(40, -8, 26, 14, 0, tint(body, .7));
-  const arm = (side, a) => { ctx.save(); ctx.translate(side * 105, -150); ctx.rotate(-side * (.5 + a)); rr(-11, 0, 22, 70, 11, tint(body, .82)); ctx.restore(); };
-  arm(-1, armL); arm(1, armR);
+  ell(0, 4, 130 * grow * (1 - bob * .01), 18 * grow, 0, 'rgba(5,10,25,.4)');
+  ctx.scale(grow * (1 + squash), grow * (1 - squash));
+  ell(-40 + stepA * 14, -8 - Math.max(0, stepA) * 16, 26, 14, 0, tint(body, .7)); ell(40 - stepA * 14, -8 - Math.max(0, -stepA) * 16, 26, 14, 0, tint(body, .7));
+  ctx.translate(0, -bob); ctx.rotate(tilt + lean);
+  const wav = waveR ? .45 * Math.sin(waveR * 9) : 0;
+  const arm = (side, a) => { ctx.save(); ctx.translate(side * 105, -150); ctx.rotate(-side * (.5 + a + (walk ? side * stepA * .3 : 0))); rr(-11, 0, 22, 70, 11, tint(body, .82)); ctx.restore(); };
+  arm(-1, armL); arm(1, waveR ? 2.3 + wav : armR);
   ell(0, -150, 120, 145, 0, body);
   ctx.save(); ctx.beginPath(); ctx.ellipse(0, -150, 120, 145, 0, 0, 7); ctx.clip(); ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.fillRect(45, -300, 90, 300); ctx.restore();
   if (belly) ell(0, -95, 70, 60, 0, belly);
+  const big = mood === 'surprised' || mood === 'excited' ? 1.18 : 1;
   const eye = (ex, wink) => { ctx.save(); ctx.translate(ex, -190);
     if (mood === 'happy' || wink) { ctx.strokeStyle = DEEP; ctx.lineWidth = 9; ctx.lineCap = 'round'; ctx.beginPath(); ctx.arc(0, 8, 18, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke(); ctx.restore(); return; }
-    ctx.scale(1, Math.max(.08, 1 - blink)); circ(0, 0, 30, '#ffffff'); const lx = look * 9, ly = mood === 'think' ? -9 : 0; circ(lx, ly + 3, 15, DEEP); circ(lx - 5, ly - 3, 5, '#fff');
+    ctx.scale(big, big * Math.max(.08, 1 - blink)); circ(0, 0, 30, '#ffffff');
+    const lx = look * 9, ly = mood === 'think' ? -9 : mood === 'worried' ? 4 : 0, pr = mood === 'surprised' ? 11 : 15;
+    circ(lx, ly + 3, pr, DEEP); circ(lx - 5, ly - 3, 5, '#fff');
+    if (mood === 'excited') { ctx.fillStyle = '#fff'; ctx.beginPath(); for (let i = 0; i < 8; i++) { const a = i / 8 * 6.2832, r = i % 2 ? 3 : 8; ctx.lineTo(lx + 6 + Math.cos(a) * r, ly - 4 + Math.sin(a) * r); } ctx.fill(); }
     if (mood === 'sad') { ctx.fillStyle = body; ctx.beginPath(); ctx.moveTo(-34, -34); ctx.lineTo(34, -34); ctx.lineTo(ex < 0 ? 34 : -34, -8); ctx.closePath(); ctx.fill(); }
     ctx.restore(); };
   eye(-42, 0); eye(42, winkR);
-  ctx.strokeStyle = DEEP; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath();
-  if (mood === 'sad') ctx.arc(0, -115, 16, Math.PI * 1.2, Math.PI * 1.8); else if (mood === 'think') { ctx.moveTo(-10, -128); ctx.lineTo(10, -128); } else ctx.arc(0, -140, mood === 'happy' ? 22 : 14, Math.PI * .2, Math.PI * .8);
-  ctx.stroke();
+  const brow = { surprised: [-.0, -18], worried: [.35, -4], sad: [.3, 0], think: [-.25, 0], excited: [0, -12] }[mood];
+  if (brow) [-1, 1].forEach(sd => { ctx.save(); ctx.translate(sd * 42, -236 + brow[1]); ctx.rotate(sd * brow[0]); rr(-20, -4, 40, 8, 4, tint(body, .55)); ctx.restore(); });
+  ctx.fillStyle = DEEP; ctx.strokeStyle = DEEP; ctx.lineWidth = 6; ctx.lineCap = 'round';
+  if (talk > .02 || mood === 'surprised') { const o = mood === 'surprised' ? Math.max(.6, talk) : talk; ell(0, -128, 14 + 6 * o, 4 + 18 * o, 0, DEEP); if (o > .3) ell(0, -120 + 6 * o, 8, 4 * o, 0, '#e8746a'); }
+  else { ctx.beginPath();
+    if (mood === 'sad') ctx.arc(0, -115, 16, Math.PI * 1.2, Math.PI * 1.8);
+    else if (mood === 'think') { ctx.moveTo(-10, -128); ctx.lineTo(10, -128); }
+    else if (mood === 'worried') { ctx.moveTo(-16, -126); ctx.quadraticCurveTo(-8, -134, 0, -126); ctx.quadraticCurveTo(8, -118, 16, -126); }
+    else if (mood === 'excited') { ctx.arc(0, -142, 24, Math.PI * .1, Math.PI * .9); ctx.fill(); }
+    else ctx.arc(0, -140, mood === 'happy' ? 22 : 14, Math.PI * .2, Math.PI * .8);
+    ctx.stroke(); }
   ell(-78, -140, 15, 9, 0, 'rgba(252,98,85,.3)'); ell(78, -140, 15, 9, 0, 'rgba(252,98,85,.3)');
   ctx.restore();
   claim('hero', 'keep', x - 130 * s, y - 300 * s, 260 * s, 300 * s);
+}
+function crowd(x, y, w, h, n, t, o = {}) {        // n small creatures in a loose grid; `mark` of them in another colour (a true proportion)
+  const { mark = 0, markCol = WRONG, cols = ['#6f82ad'], s = null, p = 1, mood = 'plain', seed = 7 } = o;
+  const cw = Math.ceil(Math.sqrt(n * w / h)), ch = Math.ceil(n / cw), gx = w / cw, gy = h / ch, sc = s ?? Math.min(gx / 300, gy / 330) * .9;
+  const order = Array.from({ length: n }, (_, i) => i).sort((a, b2) => hash2(a, seed) - hash2(b2, seed));   // which ones are marked: scattered, not a block
+  const marked = new Set(order.slice(0, mark));
+  for (let i = 0; i < n; i++) { const q = back(prog(p, i / n * .6, i / n * .6 + .4)); if (q <= 0) continue;
+    const cx = x + (i % cw + .5) * gx + (hash2(i, seed + 1) - .5) * gx * .25, cy = y + (Math.floor(i / cw) + 1) * gy - (hash2(i, seed + 2)) * gy * .1;
+    blob(cx, cy, sc * q, { body: marked.has(i) ? markCol : cols[i % cols.length], mood, blink: blinkAt(t + hash2(i, 3) * 9), look: Math.sin(t + i) * .5, squash: .03 * Math.sin(t * 4 + i) }); }
+  LAYOUT = LAYOUT.filter(L => L.id !== 'hero' || L.w > 200);      // the crowd's members don't claim layout space individually
+  claim('crowd', 'keep', x, y, w, h);
 }
 const DIALS = [[-48, -132], [0, -132], [48, -132], [-24, -88], [24, -88]];
 function robot(x, y, s, st = {}) {                // Bit: screen face, chest panel with a meter and 5 dials (weights, knobs, settings)
@@ -235,7 +264,8 @@ function robot(x, y, s, st = {}) {                // Bit: screen face, chest pan
     ctx.restore(); };
   eye(-48, 1, 0); eye(48, eyeR, winkR);
   ctx.strokeStyle = THREAD; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath();
-  if (mood === 'sad') ctx.arc(0, -282, 16, Math.PI * 1.2, Math.PI * 1.8); else if (mood === 'think') { ctx.moveTo(-10, -292); ctx.lineTo(10, -292); } else ctx.arc(0, -305, mood === 'happy' ? 22 : 15, Math.PI * .2, Math.PI * .8);
+  if (st.talk > .02) { ell(0, -290, 16 + 6 * st.talk, 3 + 16 * st.talk, 0, THREAD); ctx.beginPath(); }
+  else if (mood === 'sad') ctx.arc(0, -282, 16, Math.PI * 1.2, Math.PI * 1.8); else if (mood === 'think') { ctx.moveTo(-10, -292); ctx.lineTo(10, -292); } else ctx.arc(0, -305, mood === 'happy' ? 22 : 15, Math.PI * .2, Math.PI * .8);
   ctx.stroke();
   ell(-92, -300, 16, 10, 0, 'rgba(252,98,85,.35)'); ell(92, -300, 16, 10, 0, 'rgba(252,98,85,.35)');
   ctx.restore();
@@ -310,6 +340,10 @@ let VO = [];                                      // filled by finish(): [{file,
 function said(scene, i = 0) {                     // time visuals and words to the voice: said('hook').at / .to
   const l = VO.filter(v => v.scene === scene)[i]; return l || { at: SC[scene]?.from ?? 0, to: SC[scene]?.to ?? 0 };
 }
+function voiceLevel(t) {                          // 0..1 loudness of the narration right now (real envelope, for lip-sync: talk: voiceLevel(t))
+  const v = VO.find(l => t >= l.at && t <= l.to); if (!v || !v.env) return 0;
+  const i = (t - v.at) * 30, a = v.env[Math.floor(i)] ?? 0, c = v.env[Math.floor(i) + 1] ?? 0; return lerp(a, c, i % 1);
+}
 function speaking(t) { return VO.some(v => t >= v.at && t <= v.to); }   // e.g. a character's mouth moves while this is true
 
 // ---------- frame ----------
@@ -318,9 +352,10 @@ function frameAt(frame) {
   BOIL = 0; LAYOUT = [];
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.filter = 'none'; ctx.globalAlpha = 1;
   ctx.drawImage(paper, 0, 0);
-  if (typeof backdrop === 'function') backdrop(t); else motes(t);
-  const shot = SHOTS.find(s => t >= s.from && t < s.to) || SHOTS[SHOTS.length - 1];
-  withCamera(shot.cam(t), () => world(t));
+  const shot = SHOTS.find(s => t >= s.from && t < s.to) || SHOTS[SHOTS.length - 1], cam = shot.cam(t);
+  if (HIDE_BACKDROP) {} else if (typeof backdrop === 'function') backdrop(t, cam); else motes(t);
+  withCamera(cam, () => world(t));
+  if (LOOK.grain !== 0 && !HIDE_BACKDROP) grain(LOOK.grain ?? .06);
   words(t);
   window.LAYOUT = LAYOUT;
 }
@@ -338,6 +373,6 @@ function finish() {                               // call once at the end of sce
   window.draw = frameAt; window.FRAMES = FRAMES; window.FPS = FPS;
   window.CUES = SHOTS.slice(1).map(s => s.from);
   window.CHECKS = CHECKS; window.getWords = () => [...WORD_LOG];
-  window.setHideWords = v => { HIDE_WORDS = v; }; window.BG_HEX = BG;
+  window.setHideWords = v => { HIDE_WORDS = v; }; window.setHideBackdrop = v => { HIDE_BACKDROP = v; }; window.BG_HEX = BG;
   window.SCORE = ac => buildGroove(ac, { dur: DUR, bpm: BPM, sections: SECTIONS, events: EVENTS, ...MUSIC });
 }

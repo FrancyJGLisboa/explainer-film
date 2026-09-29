@@ -34,14 +34,18 @@ const res = await page.evaluate(EVERY => {
   let lastFill = -1;
   window.setHideWords(true);
   for (let t = 0; t * window.FPS < window.FRAMES; t += EVERY) {
+    if (window.setHideBackdrop) window.setHideBackdrop(true);
     window.draw(Math.round(t * window.FPS));
-    if (t - lastFill >= 1 - 1e-9) { lastFill = t; const d = x.getImageData(0, 0, W, H).data, CELL = 40, occ = new Set();
+    const bare = x.getImageData(0, 0, W, H).data;             // no backdrop: what the film itself draws
+    if (window.setHideBackdrop) { window.setHideBackdrop(false); window.draw(Math.round(t * window.FPS)); }
+    if (t - lastFill >= 1 - 1e-9) { lastFill = t; const d = bare, CELL = 40, occ = new Set();
       for (let y = 0; y < H; y += 3) for (let xx = 0; xx < W; xx += 3) if (isInk(d, (y * W + xx) * 4)) occ.add(Math.floor(y / CELL) * 1000 + Math.floor(xx / CELL));
       out.fill.push([+t.toFixed(2), occ.size / (Math.ceil(W / CELL) * Math.ceil(H / CELL))]); }
     for (const L of window.LAYOUT || []) {
       if (L.kind !== 'text') continue;
       const cx = L.x + L.w / 2, cy = L.y + L.h / 2, key = L.id, ts = t.toFixed(2);
       if ((cx < W * .12 || cx > W * .88) && (cy < H * .14 || cy > H * .86)) (out.corner[key] ||= []).push(ts);
+      const bareAt = (bx, by, bw, i) => { const px = (i / 4) % bw, py = Math.floor(i / 4 / bw), j = ((by + py) * W + bx + px) * 4; return [bare[j], bare[j + 1], bare[j + 2]]; };
       const onScreen = L.x + L.w > 0 && L.y + L.h > 0 && L.x < W && L.y < H;
       if (!onScreen) continue;
       if (L.x < -2 || L.y < -2 || L.x + L.w > W + 2 || L.y + L.h > H + 2) (out.off[key] ||= []).push(ts);
@@ -50,7 +54,7 @@ const res = await page.evaluate(EVERY => {
       const bx = Math.max(0, Math.floor(L.x)), by = Math.max(0, Math.floor(L.y)), bw = Math.min(W - bx, Math.ceil(L.w)), bh = Math.min(H - by, Math.ceil(L.h));
       if (bw <= 0 || bh <= 0) continue;
       const d = x.getImageData(bx, by, bw, bh).data; let n = 0, bad = 0, art = 0;
-      for (let i = 0; i < d.length; i += 4 * 5) { const lb = lum(d[i], d[i + 1], d[i + 2]), ratio = (Math.max(lt, lb) + .05) / (Math.min(lt, lb) + .05); n++; if (ratio < 3) bad++; if (isArt(d, i)) art++; }
+      for (let i = 0; i < d.length; i += 4 * 5) { const lb = lum(d[i], d[i + 1], d[i + 2]), ratio = (Math.max(lt, lb) + .05) / (Math.min(lt, lb) + .05); n++; if (ratio < 3) bad++; if (isArt(bareAt(bx, by, bw, i), 0)) art++; }
       if (n && bad / n > .12) (out.low[key] ||= []).push(ts);
       else if (n && art / n > .008) (out.over[key] ||= []).push(ts);
     }
