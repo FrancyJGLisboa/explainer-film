@@ -22,7 +22,9 @@ const scenes = await page.evaluate(() => window.SCENE_LIST || []);
 const narr = existsSync(join(film, 'voice/timing.json')) ? JSON.parse(readFileSync(join(film, 'voice/timing.json'), 'utf8')).lines : [];
 const title = await page.evaluate(() => document.title);
 let md = `# Review packet: ${title}\n\n`;
-md += `## Brief (from the maker)\n\n${existsSync(join(film, 'brief.md')) ? readFileSync(join(film, 'brief.md'), 'utf8') : '(no brief.md)'}\n\n## Scenes\n\n`;
+md += `## Brief (from the maker)\n\n${existsSync(join(film, 'brief.md')) ? readFileSync(join(film, 'brief.md'), 'utf8') : '(no brief.md)'}\n\n`;
+if (existsSync(join(film, 'refs/style.md'))) md += `## Reference style the film should follow (grammar only)\n\n${readFileSync(join(film, 'refs/style.md'), 'utf8')}\n\n`;
+md += `## Scenes\n\n`;
 const shots = [];
 for (const [i, s] of scenes.entries()) {
   const lines = narr.filter(l => l.scene === s.name).map(l => `"${l.text}"`).join(' ') || '(no narration)';

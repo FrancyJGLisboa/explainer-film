@@ -34,6 +34,8 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
 
 **1. Scaffold.** `film.sh new <slug> "<Title>"` prints the folder.
 
+**1b. Reference (only when the user gives one: "in the style of <video or link>").** Run `film.sh reference <dir> <file|link>`. It measures the reference into `refs/`: frames every 0.5 s, a contact sheet, cuts and shot lengths, and the dominant palette. Look at `refs/sheet.jpg` and a few frames, then fill in `refs/style.md`. Take the **grammar** (palette roles, type, shot length, transitions, camera, motion feel, texture, how text enters and exits), **never the content**: no copied characters, logos, text or scenes. Set `src/head.js` from it. Both reviewers read `refs/style.md`.
+
 **2. Brief (`brief.md`).** Fill in the template (`kit/brief.example.md` is a filled one, for the demo film):
 - **Core idea:** one sentence.
 - **Hunch:** research the mechanism first. If facts or numbers matter, use web search, and prefer primary sources.
@@ -53,6 +55,8 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
 - Run `film.sh voice <dir>`. The first use installs Kokoro (about 350 MB, once). It prints the beats each scene needs; set the `SC` beats to at least that, and set DUR to beats × BEAT.
 - In scenes.js, time visuals to the voice with `said('scene').at / .to`, and use `speaking(t)` to animate a character while the voice talks.
 - `film.sh check` fails if a line runs past its scene. `film.sh render` mixes the voice in, lowers the music under it and normalises loudness to −16 LUFS. It keeps `<slug>.music-only.mp4` too.
+
+**2c. Plan review (before any scene code).** Run `film.sh plan <dir>`. The independent reviewer judges the brief: a mechanism happening in every scene, correct science, a colour plan that tells the truth, real tests, sourced claims, one big visual per scene, and a full arc. Fix what it blocks and run it again (3 rejections stop the loop). The film review later refuses to run unless the current brief has an approved plan, so any later brief change means another plan review.
 
 **3. Look (`src/head.js`).** Retune HERO and THREAD to the topic (palette guide in style.md). Give each quantity one VAR colour.
 - **World:** pick the environment that matches the topic's real setting: `WORLD.landscape` (nature, land, farming), `space` (astronomy, scale), `city` (people, economy), `ocean` (water, climate), `micro` (biology, chemistry). Use `function backdrop(t, cam) { WORLD.x(t, cam); }`, or none (plain dark ground) for pure maths.

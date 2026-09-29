@@ -38,6 +38,9 @@ shows('linear curve stays straight, under the ceiling', Math.abs(bend(lin, 0, X_
 shows('slow first: sharing stays below adding for the first 4 steps', [1, 2, 3, 4].every(u => grow(u) < lin(u)));
 shows('then sudden: sharing ends far above adding', grow(GROW_END) > 2 * lin(GROW_END));
 shows('growing by a share: each step adds more than the last', EXP.every((v, i) => i < 2 || v - EXP[i - 1] > EXP[i - 1] - EXP[i - 2]));
+shows('adding: every step gains exactly 2', Array.from({ length: GROW_END }, (_, u) => lin(u + 1) - lin(u)).every(g => Math.abs(g - 2) < 1e-9));
+shows('limited: gains grow, then shrink toward zero under the ceiling', (() => { const g = Array.from({ length: X_END }, (_, u) => logi(u + 1) - logi(u)); const m = g.indexOf(Math.max(...g)); return m > 2 && m < X_END - 3 && g[X_END - 1] < g[m] / 4; })());
+shows('the green curve ends within 5% of the ceiling', logi(X_END) > .95 * cap && logi(X_END) < cap);
 shows('with a limit, growth levels off (end slope under a fifth of its mid slope)', bend(logi, 10, X_END) < .2);
 shows('the hook doubles: each row of dots is twice the last', ROWS.every((n, i, a) => !i || n === 2 * a[i - 1]));
 shows('the limited curve never runs above the unlimited one, rises above the line, and stays under the ceiling', Array.from({ length: 41 }, (_, i) => i / 2).every(u => logi(u) <= grow(u) + 1e-9) && logi(12) > lin(12) && logi(X_END) < cap);
@@ -80,9 +83,16 @@ function world(t) {
     let tip = plot(AX, grow, 0, GROW_END, prog(t, b(30), b(40)), VAR.yellow);
     callout('+2 each step', AX.X(16), AX.Y(lin(16)), AX.X(16), AX.Y(lin(16)) + 110, prog(t, b(35), b(35.5)), { bg: VAR.blue, size: 24 });   // after the line has passed step 16 (it reaches it at b(34.8))
     callout('×1.35 each step', AX.X(9.6), AX.Y(grow(9.6)), AX.X(9.6) - 300, AX.Y(grow(9.6)) + 135, prog(t, b(40), b(40.5)), { bg: VAR.yellow, size: 24 });
+    // gain per step, on the chart's own scale: a marker walks the curve and leaves a bar for each step's gain
+    const gains = (fn, u0, u1, t0, t1, col, dx) => { const st = Math.floor(lerp(u0, u1, prog(t, t0, t1)) + 1e-9);
+      for (let u = u0; u < st && u < u1; u++) { const g = fn(u + 1) - fn(u), q = back(prog(t, lerp(t0, t1, (u - u0) / (u1 - u0)), lerp(t0, t1, (u - u0) / (u1 - u0)) + .3));
+        rr(AX.X(u + .5) + dx - 7, AX.Y(0) - (AX.Y(0) - AX.Y(g)) * q, 14, (AX.Y(0) - AX.Y(g)) * q, 4, col); }
+      if (t > t0 && t < t1 + .6) { const u = lerp(u0, u1, prog(t, t0, t1)); circ(AX.X(u), AX.Y(fn(u)), 12, col); } };
+    if (t > SC.insight.from && t < SC.limits.from + .5) { gains(grow, 0, GROW_END, b(42.5), b(47.5), VAR.yellow, -9); gains(lin, 0, GROW_END, b(42.5), b(47.5), VAR.blue, 9); }
+    if (t > SC.loop.from) gains(logi, 0, X_END, b(62.5), b(68.5), VAR.green, 0);
     if (t > SC.insight.from && t < SC.limits.from) {                 // name the two phases on the curve itself
-      callout('slow', AX.X(3), AX.Y(grow(3)), AX.X(3), AX.Y(grow(3)) - 170, prog(t, b(43), b(43.5)), { bg: MUTED });
-      callout('sudden', AX.X(8.2), AX.Y(grow(8.2)), AX.X(11.5), AX.Y(30), prog(t, b(45), b(45.5)), { bg: VAR.yellow });
+      callout('slow', AX.X(3), AX.Y(grow(3)), AX.X(3), AX.Y(grow(3)) - 170, prog(t, b(48), b(48.5)), { bg: MUTED });
+      callout('sudden', AX.X(8.2), AX.Y(grow(8.2)), AX.X(11.5), AX.Y(30), prog(t, b(49), b(49.5)), { bg: VAR.yellow });
     }
     if (t > SC.limits.from) {
       const c = prog(t, b(52.5), b(53.5)); ctx.save(); ctx.setLineDash([14, 12]); strokeLine([[AX.X(0), AX.Y(cap)], [AX.X(X_END) * c + AX.X(0) * (1 - c), AX.Y(cap)]], MUTED, 4); ctx.restore();

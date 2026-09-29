@@ -47,6 +47,12 @@ Say "narrated" or "with an ASMR voice" and the film gets a voice-over from [Koko
 `af_bella`, `bf_emma` (British), `pf_dora` / `pm_alex` (Brazilian Portuguese). The voice is made first and the scenes are sized to
 fit it. The music is lowered under the voice automatically, and a music-only cut is kept too.
 
+## In the style of a video you like
+`film.sh reference <film> <video or link>` measures a reference (frames every 0.5 s, contact sheet, cuts and shot lengths, dominant palette) and starts a style guide. The film takes the reference's grammar, never its content, and both reviewers check it.
+
+## Plan first, then film
+Before any scene is coded, `film.sh plan` has the independent reviewer approve the brief: a mechanism happening in every scene, correct science, an honest colour plan, real tests. In our tests the plan review caught, from text alone and in about a minute, everything the film reviewer later found in a weak vaccines film, plus two science errors.
+
 ## Maker is not the judge
 Automated checks can be gamed, and in our tests agents gamed every one: a giant hero to fill the frame, faint wallpaper, claim tests that test nothing, scene lengths posing as facts.
 So once `film.sh check` passes, `film.sh review` hands stills of every scene to a **fresh reviewer that didn't make the film** (the `claude` CLI, with fixed instructions in `references/reviewer.md` that the maker can't edit).

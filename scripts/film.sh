@@ -5,6 +5,8 @@
 #   film.sh stills <dir> 4s,12s    full-size stills into qc/
 #   film.sh new-long <slug> "Title" <n>   a long film: ~/films/<slug>/outline.md + ch01..chNN (each a normal film)
 #   film.sh check-long <dir> / render-long <dir>   check every chapter (+ same look) / render changed chapters and join them
+#   film.sh reference <dir> <video|link>  study a reference video's grammar -> refs/ (frames, sheet, cuts, palette, style.md to fill)
+#   film.sh plan <dir>             independent review of the plan (brief + narration) before any scene code
 #   film.sh review <dir>           independent review: a fresh reviewer (claude CLI, fixed prompt) judges stills of every scene; render needs its approval
 #   film.sh voice <dir>            narrate src/narration.json with Kokoro (free, local) -> voice/*.wav + beats each scene needs
 #   film.sh render <dir>           build + render <slug>.mp4 (+ .wav, cues) + sync/loudness check (+ voice mix if voice/ exists)
@@ -75,47 +77,31 @@ case "$cmd" in
       curl -sSL -o "$T/kokoro-v1.0.onnx" "$R/kokoro-v1.0.onnx"; curl -sSL -o "$T/voices-v1.0.bin" "$R/voices-v1.0.bin"
     fi
     "$T/.venv/bin/python" "$HERE/voice.py" "$d" ;;
+  reference)
+    sh "$HERE/reference.sh" "$1" "$2" ;;
+  plan)
+    # independent review of the PLAN (brief.md + narration) before any scene code; approval is keyed to this exact brief
+    d=$(cd "$1" && pwd); slug=$(basename "$d"); V=$HOME/.cache/explainer-film/verdicts; W=$d/qc/plan; rm -rf "$W"; mkdir -p "$W"
+    grep -q "^\*\*Core idea[^:]*:\*\* *[^ ]" "$d/brief.md" 2>/dev/null || { echo "REFUSED: fill in brief.md first (core idea, kit plan, reality map with tests, claims, beats)."; exit 1; }
+    { echo "# Plan packet: $(sed -n 's#^// TITLE: ##p' "$d/src/head.js")"; echo; cat "$d/brief.md"
+      [ -f "$d/src/narration.json" ] && { printf '\n## Narration (src/narration.json)\n\n```json\n'; cat "$d/src/narration.json"; printf '\n```\n'; }
+      [ -f "$d/refs/style.md" ] && { printf '\n## Reference style (refs/style.md)\n\n'; cat "$d/refs/style.md"; }
+    } > "$W/plan-packet.md"
+    h=$(shasum -a 256 "$d/brief.md" | cut -c1-16)
+    echo "reviewing the plan with an independent reviewer (about 1 min)..."
+    sh "$HERE/judge.sh" "$W" "$ROOT/references/plan-reviewer.md" plan-packet.md "$V/plans/$h.json" "$V/plan_$slug" ;;
   review)
-    d=$(cd "$1" && pwd); V=$HOME/.cache/explainer-film/verdicts; mkdir -p "$V"
-    # review costs a model call, so it runs on films that pass the checks (REVIEW_ANYWAY=1 is for calibrating the reviewer;
-    # it cannot unlock a render, which re-runs every check itself)
-    if [ "${REVIEW_ANYWAY:-0}" != 1 ] && ! out=$(sh "$0" check "$d" 5 2>&1); then echo "$out" | grep -vE '^(contact sheet|CLEAN: /)'; echo "REFUSED: review runs only on a film that passes film.sh check."; exit 1; fi
-    # round cap: after 3 rejections of this film, stop and hand it to a person (the counter resets on approval)
-    slug=$(basename "$d"); R=$V/rounds_$slug; n=$(cat "$R" 2>/dev/null || echo 0)
-    if [ "$n" -ge 3 ] && [ "${REVIEW_MORE:-0}" != 1 ]; then echo "STOP: the reviewer has rejected this film 3 times. Report the latest verdict (qc/review/verdict.json) to the user and let them decide; do not keep looping."; exit 1; fi
-    prev=$V/last_$slug.json
+    d=$(cd "$1" && pwd); slug=$(basename "$d"); V=$HOME/.cache/explainer-film/verdicts; mkdir -p "$V"
+    # the film review needs an approved plan for the current brief (REVIEW_ANYWAY=1 is for calibrating the reviewer only)
+    bh=$(shasum -a 256 "$d/brief.md" 2>/dev/null | cut -c1-16)
+    if [ "${REVIEW_ANYWAY:-0}" != 1 ]; then
+      python3 -c "import json,sys; sys.exit(0 if json.load(open(sys.argv[1]))['approved'] else 1)" "$V/plans/$bh.json" 2>/dev/null || { echo "REFUSED: the plan for this brief is not approved. Run film.sh plan <dir> first (and again after any brief change)."; exit 1; }
+      if ! out=$(sh "$0" check "$d" 5 2>&1); then echo "$out" | grep -vE '^(contact sheet|CLEAN: /)'; echo "REFUSED: review runs only on a film that passes film.sh check."; exit 1; fi
+    fi
     sh "$HERE/build.sh" "$d" >/dev/null; cd "$RUN" && node "$HERE/review.mjs" "$d" || exit 1
-    [ -f "$prev" ] && { printf '\n## Previous review (check each required fix)\n\n```json\n'; cat "$prev"; printf '\n```\n'; } >> "$d/qc/review/packet.md"
     h=$(shasum -a 256 "$d/piece.html" | cut -c1-16)
-    command -v claude >/dev/null || { echo "reviewer unavailable: the claude CLI is not installed; a person must review qc/review/ and render with FORCE=1"; exit 1; }
-    SCHEMA='{"type":"object","properties":{"approved":{"type":"boolean"},"summary":{"type":"string"},"suggestions":{"type":"array","items":{"type":"string"}},"scenes":{"type":"array","items":{"type":"object","properties":{"scene":{"type":"string"},"verdict":{"type":"string","enum":["pass","fail"]},"problems":{"type":"array","items":{"type":"string"}}},"required":["scene","verdict","problems"]}},"required_fixes":{"type":"array","items":{"type":"string"}}},"required":["approved","summary","scenes","required_fixes"]}'
     echo "reviewing $(ls "$d/qc/review"/*.jpg | wc -l | tr -d ' ') stills with an independent reviewer (about 1-3 min)..."
-    ( cd "$d/qc/review" && claude -p "$(cat "$ROOT/references/reviewer.md")
-
-The review folder is the current directory: read packet.md, then every .jpg it lists. Return the verdict." \
-        --allowedTools Read --output-format json --json-schema "$SCHEMA" ${REVIEW_MODEL:+--model "$REVIEW_MODEL"} < /dev/null ) > "$d/qc/review/raw.json" 2>"$d/qc/review/raw.err"
-    if python3 -c "import json,sys; j=json.load(open(sys.argv[1])); sys.exit(0 if j.get('is_error') else 1)" "$d/qc/review/raw.json" 2>/dev/null || [ ! -s "$d/qc/review/raw.json" ]; then
-      echo "reviewer error (not a verdict): $(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('result','no output'))" "$d/qc/review/raw.json" 2>/dev/null || tail -2 "$d/qc/review/raw.err"). Run film.sh review again."; exit 1; fi
-    python3 - "$d/qc/review/raw.json" "$V/$h.json" "$d/qc/review/verdict.json" <<'PY' || exit 1
-import json, sys
-raw = json.load(open(sys.argv[1]))
-v = raw.get("structured_output")
-if v is None:
-    r = raw.get("result", ""); v = json.loads(r[r.find("{"):r.rfind("}") + 1])
-for p in sys.argv[2:]: json.dump(v, open(p, "w"), indent=1)
-import os, pathlib
-slug = pathlib.Path(sys.argv[3]).parents[2].name; V = pathlib.Path(sys.argv[2]).parent
-json.dump(v, open(V / f"last_{slug}.json", "w"), indent=1)
-rf = V / f"rounds_{slug}"; n = int(rf.read_text()) if rf.exists() else 0
-rf.write_text("0" if v["approved"] else str(n + 1))
-print(("APPROVED" if v["approved"] else "REJECTED") + ": " + v["summary"])
-for s in v["scenes"]:
-    if s["verdict"] == "fail": print(f"  x {s['scene']}: " + " | ".join(s["problems"]))
-for f in v["required_fixes"]: print("  fix: " + f)
-for f in v.get("suggestions", []): print("  suggestion (not blocking): " + f)
-sys.exit(0 if v["approved"] else 1)
-PY
-    ;;
+    sh "$HERE/judge.sh" "$d/qc/review" "$ROOT/references/reviewer.md" packet.md "$V/$h.json" "$V/film_$slug" ;;
   render)
     d=$(cd "$1" && pwd); slug=$(basename "$d")
     # hard gate: a film that fails its checks is not finished, so it does not render (a person can override with FORCE=1)
@@ -132,5 +118,5 @@ PY
       node "$HERE/narrate-plan.mjs" "$d/piece.html" > "$d/voice/plan.json"
       sh "$HERE/mix.sh" "$d" "$d/voice/plan.json"
     fi ;;
-  *) sed -n '2,11p' "$0"; exit 1 ;;
+  *) sed -n '2,13p' "$0"; exit 1 ;;
 esac
