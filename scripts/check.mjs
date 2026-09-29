@@ -30,7 +30,8 @@ const res = await page.evaluate(EVERY => {
   const c = document.querySelector('canvas'), x = c.getContext('2d'), W = c.width, H = c.height;
   const lum = (r, g, b) => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }; return .2126 * f(r) + .7152 * f(g) + .0722 * f(b); };
   const hex = h => { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); };
-  const out = { low: {}, corner: {}, off: {}, over: {}, fill: [] };
+  const out = { low: {}, corner: {}, off: {}, over: {}, fill: [], unsafe: {} };
+  const S = window.SAFE || { x0: 0, y0: 0, x1: W, y1: H };
   const BGC = hex(window.BG_HEX || '#000000'), dist = (d, i) => Math.abs(d[i] - BGC[0]) + Math.abs(d[i + 1] - BGC[1]) + Math.abs(d[i + 2] - BGC[2]),
         isInk = (d, i) => dist(d, i) > 45, isArt = (d, i) => dist(d, i) > 90;   // faint grids count as fill, not as art under text
   let lastFill = -1;
@@ -53,6 +54,7 @@ const res = await page.evaluate(EVERY => {
       const onScreen = L.x + L.w > 0 && L.y + L.h > 0 && L.x < W && L.y < H;
       if (!onScreen) continue;
       if (L.x < -2 || L.y < -2 || L.x + L.w > W + 2 || L.y + L.h > H + 2) (out.off[key] ||= []).push(ts);
+      else if (L.x < S.x0 - 2 || L.y < S.y0 - 2 || L.x + L.w > S.x1 + 2 || L.y + L.h > S.y1 + 2) (out.unsafe[key] ||= []).push(ts);
       if (L.own || !L.col || !L.col.startsWith('#')) continue;
       const [r0, g0, b0] = hex(L.col), lt = lum(r0, g0, b0);
       const bx = Math.max(0, Math.floor(L.x)), by = Math.max(0, Math.floor(L.y)), bw = Math.min(W - bx, Math.ceil(L.w)), bh = Math.min(H - by, Math.ceil(L.h));
@@ -66,7 +68,7 @@ const res = await page.evaluate(EVERY => {
   window.setHideWords(false);
   out.allWords = window.getWords();
   out.words = out.allWords.filter(s => s.split(' ').length > 8);
-  out.title = document.title;
+  out.title = document.title; out.platform = window.PLATFORM_NAME;
   out.checks = window.CHECKS;
   return out;
 }, EVERY);
@@ -83,6 +85,7 @@ res.checks.forEach(c => fails.push(`storyboard: ${c}`));
 if (score) fails.push(`sound: ${score}`);
 Object.entries(res.low).forEach(([k, ts]) => fails.push(`contrast: "${k}" is hard to read against what is behind it at ${span(ts)}`));
 Object.entries(res.corner).forEach(([k, ts]) => fails.push(`corner: "${k}" sits in a corner at ${span(ts)}`));
+Object.entries(res.unsafe).forEach(([k, ts]) => fails.push(`safe zone: "${k}" is under ${res.platform}'s own buttons or captions at ${span(ts)}; keep words inside the safe zone`));
 Object.entries(res.off).forEach(([k, ts]) => fails.push(`off-frame: "${k}" runs off the frame at ${span(ts)}`));
 Object.entries(res.over).forEach(([k, ts]) => fails.push(`text over art: "${k}" is drawn across lines or shapes at ${span(ts)}; move it to empty space`));
 const fl = res.fill.map(f => f[1]).sort((a, b) => a - b), med = fl[Math.floor(fl.length / 2)] || 0;

@@ -1,5 +1,6 @@
 // TITLE: {{TITLE}}
-const W = 1920, H = 1080, FPS = 60, DUR = 45, FRAMES = FPS * DUR;   // 9:16 -> W = 1080, H = 1920
+const PLATFORM = '{{PLATFORM}}';                                   // tiktok reels shorts instagram square linkedin youtube x (kit/kit.js PLATFORMS)
+const W = {{W}}, H = {{H}}, FPS = 60, DUR = 45, FRAMES = FPS * DUR;
 const cv = document.getElementById('c');
 cv.width = W; cv.height = H;
 let ctx = cv.getContext('2d');

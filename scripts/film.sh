@@ -1,6 +1,6 @@
 #!/bin/sh
 # film.sh: the explainer-film pipeline, one command per stage.
-#   film.sh new <slug> ["Title"]   scaffold ~/films/<slug> (brief.md, src/head.js, src/scenes.js)
+#   film.sh new <slug> ["Title"] [platform]   scaffold ~/films/<slug>; platform: tiktok reels shorts instagram square linkedin youtube x (default youtube)
 #   film.sh check <dir>            build + contact sheet (qc/sheet.jpg) + asset audit + layout + rules (contrast, corners, timing)
 #   film.sh stills <dir> 4s,12s    full-size stills into qc/
 #   film.sh new-long <slug> "Title" <n>   a long film: ~/films/<slug>/outline.md + ch01..chNN (each a normal film)
@@ -19,19 +19,22 @@ RUN=$HOME; [ -d "$ROOT/node_modules/playwright-core" ] && RUN=$ROOT
 cmd=$1; shift || true
 case "$cmd" in
   new)
-    slug=$1; title=${2:-$1}; [ -n "$slug" ] || { echo "usage: film.sh new <slug> [title]"; exit 1; }
+    slug=$1; title=${2:-$1}; plat=${3:-youtube}; [ -n "$slug" ] || { echo "usage: film.sh new <slug> [title] [platform]"; exit 1; }
+    case "$plat" in tiktok|reels|shorts) wh="1080 1920";; instagram|linkedin) wh="1080 1350";; square) wh="1080 1080";; youtube|x) wh="1920 1080";;
+      *) echo "unknown platform '$plat': use tiktok reels shorts instagram square linkedin youtube x"; exit 1;; esac
+    set -- $wh; fw=$1; fh=$2
     d=${FILMS_DIR:-$HOME/films}/$slug; [ -e "$d" ] && { echo "exists: $d"; exit 1; }
     mkdir -p "$d/src" "$d/qc"
-    sed "s#{{TITLE}}#$title#" "$ROOT/kit/head.template.js" > "$d/src/head.js"
+    sed -e "s#{{TITLE}}#$title#" -e "s#{{PLATFORM}}#$plat#" -e "s#{{W}}#$fw#" -e "s#{{H}}#$fh#" "$ROOT/kit/head.template.js" > "$d/src/head.js"
     cp "$ROOT/kit/scenes.template.js" "$d/src/scenes.js"
     cp "$ROOT/references/brief.template.md" "$d/brief.md"
     echo "$d" ;;
   new-long)
-    slug=$1; title=${2:-$1}; n=${3:-3}; [ -n "$slug" ] || { echo "usage: film.sh new-long <slug> [title] [chapters]"; exit 1; }
+    slug=$1; title=${2:-$1}; n=${3:-3}; plat=${4:-youtube}; [ -n "$slug" ] || { echo "usage: film.sh new-long <slug> [title] [chapters] [platform]"; exit 1; }
     d=${FILMS_DIR:-$HOME/films}/$slug; [ -e "$d" ] && { echo "exists: $d"; exit 1; }
     mkdir -p "$d"; printf '# %s\n\n**Core idea:**\n\n| ch | title (must name the topic) | one idea | seconds |\n|---|---|---|---|\n' "$title" > "$d/outline.md"
     i=1; while [ $i -le "$n" ]; do c=$(printf 'ch%02d' $i)
-      FILMS_DIR="$d" sh "$0" new "$c" "$title: chapter $i" >/dev/null; echo "| $i | $title: ... |  | 45 |" >> "$d/outline.md"; i=$((i+1)); done
+      FILMS_DIR="$d" sh "$0" new "$c" "$title: chapter $i" "$plat" >/dev/null; echo "| $i | $title: ... |  | 45 |" >> "$d/outline.md"; i=$((i+1)); done
     echo "$d" ;;
   check-long)
     d=$(cd "$1" && pwd); s=0

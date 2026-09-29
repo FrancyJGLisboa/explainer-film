@@ -7,6 +7,45 @@ const SANS = (s, w = 800) => `${w} ${s}px "Avenir Next", "Helvetica Neue", Arial
 const MATH = (s, italic = true) => `${italic ? 'italic ' : ''}400 ${s}px "STIX Two Text", "STIXGeneral", "Times New Roman", serif`;
 const MONO = (s, w = 600) => `${w} ${s}px Menlo, ui-monospace, monospace`;
 
+// ---------- platforms: canvas, safe zone, and where things go ----------
+// Safe zones keep words and key visuals clear of each app's own buttons, captions and progress bars.
+// They are conservative approximations of current app layouts (1080-wide verticals), not official specs.
+const PLATFORMS = {
+  tiktok:    { size: [1080, 1920], safe: { top: 160, bottom: 470, left: 64, right: 150 } },
+  reels:     { size: [1080, 1920], safe: { top: 220, bottom: 420, left: 64, right: 130 } },
+  shorts:    { size: [1080, 1920], safe: { top: 160, bottom: 380, left: 64, right: 140 } },
+  instagram: { size: [1080, 1350], safe: { top: 70, bottom: 90, left: 64, right: 64 } },   // 4:5 feed
+  square:    { size: [1080, 1080], safe: { top: 64, bottom: 80, left: 64, right: 64 } },   // 1:1 feed (LinkedIn, X, Facebook)
+  linkedin:  { size: [1080, 1350], safe: { top: 70, bottom: 90, left: 64, right: 64 } },
+  youtube:   { size: [1920, 1080], safe: { top: 60, bottom: 110, left: 90, right: 90 } },  // bottom: progress bar
+  x:         { size: [1920, 1080], safe: { top: 60, bottom: 90, left: 90, right: 90 } },
+};
+const PLAT = PLATFORMS[typeof PLATFORM === 'undefined' ? 'youtube' : PLATFORM] || PLATFORMS.youtube;
+const SAFE = { x0: PLAT.safe.left, y0: PLAT.safe.top, x1: W - PLAT.safe.right, y1: H - PLAT.safe.bottom };
+// ZONE: where the template puts things, derived from the safe zone. U = one "unit": 1 at 1080 px on the short side.
+const U = Math.min(W, H) / 1080;
+const ZONE = (() => {
+  const sw = SAFE.x1 - SAFE.x0, sh = SAFE.y1 - SAFE.y0;
+  if (W > H) return {                                                   // landscape: hero left third, visual right two thirds
+    head: { x: SAFE.x0 + sw * .38, y: SAFE.y0 + 100 * U, w: sw * .6 },
+    visual: { x: SAFE.x0 + sw * .4, y: SAFE.y0 + 190 * U, w: sw * .58, h: sh * .66 },
+    hero: { x: SAFE.x0 + sw * .12, y: SAFE.y1 - 20 * U, s: .85 * U },
+    caption: { x: W / 2, y: SAFE.y1 - 40 * U, w: sw * .7 },
+  };
+  if (H / W > 1.5) return {                                             // tall (9:16): headline top, big visual middle, captions, hero small below
+    head: { x: SAFE.x0 + 10 * U, y: SAFE.y0 + 110 * U, w: sw - 20 * U },
+    visual: { x: SAFE.x0 + 40 * U, y: SAFE.y0 + 330 * U, w: sw - 80 * U, h: sh * .52 },
+    hero: { x: SAFE.x0 + 130 * U, y: SAFE.y1 - 10 * U, s: .55 * U },
+    caption: { x: (SAFE.x0 + SAFE.x1) / 2, y: SAFE.y1 - 60 * U, w: sw - 300 * U },
+  };
+  return {                                                              // square / 4:5 feed
+    head: { x: SAFE.x0 + 10 * U, y: SAFE.y0 + 90 * U, w: sw - 20 * U },
+    visual: { x: SAFE.x0 + 250 * U, y: SAFE.y0 + 190 * U, w: sw - 290 * U, h: sh * .6 },
+    hero: { x: SAFE.x0 + 110 * U, y: SAFE.y1 - 10 * U, s: .55 * U },
+    caption: { x: (SAFE.x0 + SAFE.x1) / 2, y: SAFE.y1 - 40 * U, w: sw - 40 * U },
+  };
+})();
+
 // ---------- checks the qc script reads (window.CHECKS) ----------
 const CHECKS = [];
 function shows(label, ok, detail = '') {         // assert the picture shows the claim (reality map "test" column)
@@ -42,10 +81,19 @@ function motes(t, n = 70) {                       // slow drifting specks: the o
 // ---------- words: spring up from a line, leave upward (never a plain fade) ----------
 // *word* = THREAD accent, {word|#hex} = any colour (use VAR colours to tie words to objects)
 function kine(str, x, y, t, at, out, o = {}) {
-  const { size = 72, col = TEXT, align = 'left', w = 800, stagger = .07, id = str } = o;
+  let { size = 72, col = TEXT, align = 'left', w = 800, stagger = .07, id = str, maxW = null } = o;
   WORD_LOG.add(str);
   if (t < at || t > out + 1) return;
   ctx.save(); ctx.font = SANS(size, w); ctx.textBaseline = 'alphabetic';
+  { const room = maxW ?? (align === 'center' ? 2 * Math.min(x - SAFE.x0, SAFE.x1 - x) : align === 'right' ? x - SAFE.x0 : SAFE.x1 - x), tw = ctx.measureText(str.replace(/[*{}]|\|#[0-9a-fA-F]{3,8}/g, '')).width;
+    const parts = str.split(' ');
+    if (tw > room * 1.3 && parts.length > 2 && !o._wrapped) {    // too long for one line on this format: wrap into two lines (balanced), keep the size
+      ctx.restore(); let best = 1, bd = 1e9;
+      for (let k = 1; k < parts.length; k++) { const a2 = parts.slice(0, k).join(' ').length, b2 = parts.slice(k).join(' ').length; if (Math.abs(a2 - b2) < bd) { bd = Math.abs(a2 - b2); best = k; } }
+      const o2 = { ...o, _wrapped: true, id: id }; kine(parts.slice(0, best).join(' '), x, y, t, at, out, { ...o2, id: id + ' (1)' });
+      kine(parts.slice(best).join(' '), x, y + size * 1.12, t, at + .12, out, { ...o2, id: id + ' (2)' }); WORD_LOG.add(str); return;
+    }
+    if (tw > room && room > 0) { size = Math.floor(size * room / tw); ctx.font = SANS(size, w); } }   // a little too long: shrink to fit the safe zone
   if (/[{}|]/.test(str.replace(/\{[^{}|]+\|#[0-9a-fA-F]{3,8}\}/g, '')) && !CHECKS.some(c => c.includes(str))) CHECKS.push(`markup: "${str}" would show raw { } or | on screen; colour words as {word|#hex}`);
   const toks = str.split(' ').map(s => { const m = s.match(/^\{(.+)\|(#[0-9a-fA-F]{3,8})\}(.*)$/); return m ? { s: m[1] + m[3], c: m[2] } : { s: s.replace(/\*/g, ''), c: s.includes('*') ? THREAD : col }; });
   const sp = ctx.measureText(' ').width, ws = toks.map(k => ctx.measureText(k.s).width), total = ws.reduce((a, c) => a + c, 0) + sp * (toks.length - 1);
@@ -446,6 +494,7 @@ function finish() {                               // call once at the end of sce
   window.draw = frameAt; window.FRAMES = FRAMES; window.FPS = FPS;
   window.CUES = SHOTS.slice(1).map(s => s.from);
   window.SCENE_LIST = Object.entries(SC).filter(([k]) => k !== '_beats').map(([name, s]) => ({ name, from: s.from, to: s.to }));
+  window.SAFE = SAFE; window.PLATFORM_NAME = typeof PLATFORM === 'undefined' ? 'youtube' : PLATFORM;
   window.CHECKS = CHECKS; window.getWords = () => [...WORD_LOG];
   window.setHideWords = v => { HIDE_WORDS = v; }; window.setHideBackdrop = v => { HIDE_BACKDROP = v; }; window.setHideHero = v => { HIDE_HERO = v; }; window.BG_HEX = BG;
   window.SCORE = ac => buildGroove(ac, { dur: DUR, bpm: BPM, sections: SECTIONS, events: EVENTS, ...MUSIC });

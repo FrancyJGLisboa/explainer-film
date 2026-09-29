@@ -3,6 +3,15 @@
 Every function draws on the current canvas `ctx`, under whatever camera is active. `t` is in seconds, and `b(n)` turns beats into seconds.
 `p` is a progress value from 0 to 1 (use `prog(t, start, end)`). Easing comes from the starter library: `ease`, `easeOut`, `back` (overshoot), `lerp`, `clamp`, `prog`, `hash2` (deterministic noise).
 
+## Layout (platform-aware)
+| name | notes |
+|---|---|
+| `PLATFORM`, `W`, `H` | set by `film.sh new ... <platform>` in src/head.js |
+| `SAFE` | `{x0, y0, x1, y1}`: the area clear of the app's own buttons, captions and progress bar. Words must stay inside |
+| `ZONE.head / visual / hero / caption` | where the headline band, the main visual (`{x, y, w, h}`), the hero (`{x, y, s}`) and captions go on this platform |
+| `U` | one unit: 1 at 1080 px on the short side; multiply sizes by it |
+| `kine(..., {maxW})` | a headline shrinks a little, or wraps into two balanced lines, to stay inside the safe zone |
+
 ## Storyboard
 | call | what it does |
 |---|---|

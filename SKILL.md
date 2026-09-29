@@ -1,6 +1,6 @@
 ---
 name: explainer-film
-description: Turn a hunch about a topic, or a pasted transcript/article, into a finished animated explainer MP4 (default 45 s, 16:9, music only; optional free local narration, including a soft ASMR voice) in a Kurzgesagt x 3Blue1Brown style whose pictures keep the structure of the real thing, so viewers can reason with them. Use when someone says "make an explainer/animation/video about X", "explain X visually", "animate this transcript/text/article", "turn this into a motion-graphics video", or gives a one-line hunch and wants it animated. Plain natural language is enough; no config. NOT for B-roll over an existing talking-head video (use motion-broll) or product ads (product-video pipeline).
+description: Turn a hunch about a topic, or a pasted transcript/article, into a finished animated explainer MP4 for any platform (TikTok, Reels, Shorts, Instagram, LinkedIn, YouTube, X; right size and safe zones; default 45 s 16:9, music only; optional free local narration, including a soft ASMR voice) in a Kurzgesagt x 3Blue1Brown style whose pictures keep the structure of the real thing, so viewers can reason with them. Use when someone says "make an explainer/animation/video about X", "explain X visually", "animate this transcript/text/article", "turn this into a motion-graphics video", or gives a one-line hunch and wants it animated. Plain natural language is enough; no config. NOT for B-roll over an existing talking-head video (use motion-broll) or product ads (product-video pipeline).
 ---
 
 # explainer-film
@@ -13,7 +13,12 @@ The API reference is `kit/KIT.md`. The scaffolded `src/scenes.js` is a complete 
 A second worked example is `examples/how-ai-learns/` (made before the kit existed).
 
 ## Defaults (change only when the user's words say so)
-- 45 s, 16:9 1920×1080, 60 fps, music only (no narrator), in the language of the input.
+- **Platform from the user's words:** TikTok → `tiktok`, Reels / Instagram story → `reels`, Shorts → `shorts`, Instagram post → `instagram` (4:5),
+  LinkedIn → `linkedin` (4:5), a square post / Facebook → `square`, YouTube / X / "widescreen" / nothing said → `youtube` (16:9).
+  Pass it to `film.sh new <slug> "<Title>" <platform>`: it sets the canvas and the **safe zone** (clear of the app's own buttons and captions).
+  Lay everything out from `ZONE` (head, visual, hero, caption) and `SAFE`, never from fixed pixels, so the film fits its platform;
+  `film.sh check` fails words that fall outside the safe zone. For several platforms, make one film per platform.
+- 45 s, 60 fps, music only (no narrator), in the language of the input.
 - Narration only when the user's words ask for it ("narrated", "with a voice", "voice-over", "ASMR"). Voice choice:
   - "ASMR" / "whisper" / "calm" → `af_nicole`
   - otherwise `af_heart`
@@ -22,7 +27,7 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
 
   All voices are free and run locally (Kokoro, Apache 2.0).
 - Time grid: 1 beat = 60 / BPM s, 1 bar = 4 beats. 45 s at 96 bpm = 72 beats = 18 bars. SC counts beats, SECTIONS counts bars.
-- "vertical" / "reels" / "tiktok" → W = 1080, H = 1920 (hero on top, visual below). "60 seconds" → DUR = 60 = 96 beats = 24 bars (beats = DUR × BPM / 60).
+- "60 seconds" → DUR = 60 = 96 beats = 24 bars (beats = DUR × BPM / 60). Social feeds reward short: 15–30 s for TikTok/Reels/Shorts works well.
 - Films go in `~/films/<slug>/`.
 - **Longer than 60 s** ("3 minutes", "a longer video", "in chapters") → a chapter film:
   - `film.sh new-long <slug> "<Title>" <n>` makes `outline.md` plus `ch01..chNN`. Each chapter is a normal film of 30–60 s with one idea, and its title names the topic.
