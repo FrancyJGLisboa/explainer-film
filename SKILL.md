@@ -1,6 +1,6 @@
 ---
 name: explainer-film
-description: Turn a hunch about a topic, or a pasted transcript/article, into a finished animated explainer MP4 (default 45 s, 16:9, music only) in a Kurzgesagt x 3Blue1Brown style whose pictures keep the structure of the real thing, so viewers can reason with them. Use when someone says "make an explainer/animation/video about X", "explain X visually", "animate this transcript/text/article", "turn this into a motion-graphics video", or gives a one-line hunch and wants it animated. Plain natural language is enough; no config. NOT for B-roll over an existing talking-head video (use motion-broll) or product ads (product-video pipeline).
+description: Turn a hunch about a topic, or a pasted transcript/article, into a finished animated explainer MP4 (default 45 s, 16:9, music only; optional free local narration, including a soft ASMR voice) in a Kurzgesagt x 3Blue1Brown style whose pictures keep the structure of the real thing, so viewers can reason with them. Use when someone says "make an explainer/animation/video about X", "explain X visually", "animate this transcript/text/article", "turn this into a motion-graphics video", or gives a one-line hunch and wants it animated. Plain natural language is enough; no config. NOT for B-roll over an existing talking-head video (use motion-broll) or product ads (product-video pipeline).
 ---
 
 # explainer-film
@@ -14,6 +14,13 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
 
 ## Defaults (change only when the user's words say so)
 - 45 s, 16:9 1920×1080, 60 fps, music only (no narrator), in the language of the input.
+- Narration only when the user's words ask for it ("narrated", "with a voice", "voice-over", "ASMR"). Voice choice:
+  - "ASMR" / "whisper" / "calm" → `af_nicole`
+  - otherwise `af_heart`
+  - British → `bf_emma`
+  - Portuguese → `pf_dora` (female) or `pm_alex` (male) with lang `pt-br`
+
+  All voices are free and run locally (Kokoro, Apache 2.0).
 - Time grid: 1 beat = 60 / BPM s, 1 bar = 4 beats. 45 s at 96 bpm = 72 beats = 18 bars. SC counts beats, SECTIONS counts bars.
 - "vertical" / "reels" / "tiktok" → W = 1080, H = 1920 (hero on top, visual below). "60 seconds" → DUR = 60 = 96 beats = 24 bars (beats = DUR × BPM / 60).
 - Films go in `~/films/<slug>/`.
@@ -29,6 +36,17 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
 - **Reality map:** for every picture, record the real thing → what's on screen → what stays true → **test** (`references/style.md`). A picture with no "what stays true" gets cut. The test is a check the code can run on the numbers it draws, like "ends ≥ 5× steeper than it starts" (`bend`) or "each row doubles". It becomes a `shows(...)` line in scenes.js.
 - **Claims table:** every number or factual claim on screen gets a source. Anything unsourced becomes "illustrative" (listed as such in the README) or is DROPPED. Never put a refuted or unsourced number on screen as fact.
 - **Beats table:** 72 beats (for 45 s), 6–8 scenes, at most 8 words per line. Arc: hook → the naive picture → the mechanism, step by step → the surprise or insight → the limits (what it isn't) → a loop or recap.
+
+**2b. Narration (only if asked): voice first, then the storyboard.**
+- Write `src/narration.json` with one or two lines per scene: `{voice, speed: 0.9, lang, lines: [{scene, text, delay?}]}`.
+- Writing rules:
+  - The voice explains and the on-screen words label. Never read the headline aloud word for word.
+  - Short sentences; "..." gives a breath.
+  - For ASMR, keep `speed` at 0.85–0.9 and use fewer, calmer lines.
+  - Keep the same claims discipline as the brief.
+- Run `film.sh voice <dir>`. The first use installs Kokoro (about 350 MB, once). It prints the beats each scene needs; set the `SC` beats to at least that, and set DUR to beats × BEAT.
+- In scenes.js, time visuals to the voice with `said('scene').at / .to`, and use `speaking(t)` to animate a character while the voice talks.
+- `film.sh check` fails if a line runs past its scene. `film.sh render` mixes the voice in, lowers the music under it and normalises loudness to −16 LUFS. It keeps `<slug>.music-only.mp4` too.
 
 **3. Look (`src/head.js`).** Retune HERO and THREAD to the topic (palette guide in style.md). Keep the ground dark and flat. Give each quantity one VAR colour.
 
@@ -73,7 +91,7 @@ Use `film.sh stills <dir> 12s,20s` to look closer. Don't render until the check 
 Then render again.
 
 **7. Deliver.**
-- Write `README.md` in the film folder from `references/readme.template.md`.
+- Write `README.md` in the film folder from `references/readme.template.md` (with narration, add the voice name and the lines).
 - `open` the mp4.
 - Tell the user in a few lines: what it shows, what was checked, and anything dropped for lack of a source.
 

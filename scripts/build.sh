@@ -12,6 +12,7 @@ TITLE=$(sed -n 's#^// TITLE: ##p' "$F/src/head.js" | head -1)
   sed -n '1,16p' "$S" | sed -e "s#<title>Untitled animation</title>#<title>${TITLE:-Explainer}</title>#" -e 's#canvas{width:min(100vw,100vh);height:auto;max-height:100vh}#canvas{max-width:100vw;max-height:100vh}#'
   cat "$F/src/head.js"
   sed -n '37,262p' "$S"
+  if [ -f "$F/voice/timing.json" ]; then printf "const NARRATION = "; cat "$F/voice/timing.json"; echo ";"; else echo "const NARRATION = null;"; fi
   cat "$K/kit.js"
   cat "$F/src/scenes.js"
   cat "$G"

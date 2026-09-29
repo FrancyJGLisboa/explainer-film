@@ -8,8 +8,8 @@ const SC = scenes(                                                 // [name, bea
   ['hook', 6], ['naive', 10], ['mechanism', 12], ['build', 14], ['insight', 10], ['limits', 10], ['loop', 10]);
 const MUSIC = { kit: 'percussion', harmony: 'bright', key: 2, sfxGain: .85 };   // kits: electro | acoustic | keys | percussion
 const SECTIONS = [                                                 // [fromBar, toBar, layers], contiguous 0..18; add 1-2 layers per bar
-  [0, 1, ['pad']], [1, 2, ['pad', 'pluck']], [2, 4, ['pad', 'pluck', 'hat8']], [4, 7, ['pad', 'pluck', 'hat8', 'kick2']],
-  [7, 10, ['pad', 'pluck', 'hat8', 'kick2', 'bassHalf']], [10, 13, ['pad', 'pluck', 'hat8', 'kick4', 'bassHalf', 'clap']],
+  [0, 1, ['pad']], [1, 2, ['pad', 'pluck']], [2, 4, ['pad', 'pluck', 'hat8']], [4, 8, ['pad', 'pluck', 'hat8', 'kick2']],
+  [8, 10, ['pad', 'pluck', 'hat8', 'kick2', 'bassHalf']], [10, 13, ['pad', 'pluck', 'hat8', 'kick4', 'bassHalf', 'clap']],
   [13, 15, ['pad', 'pluck', 'hat8', 'kick2', 'bassHalf']], [15, 17, ['pad', 'pluck', 'hat8', 'kick2']], [17, 18, ['pad', 'pluck', 'kick2']],
 ];
 const still = { cx: W / 2, cy: H / 2, k: 1 };
@@ -22,7 +22,7 @@ const SHOTS = [                                                    // one camera
 ];
 const EVENTS = [                                                   // [seconds, sfx]: one per visible action, on beats
   [b(1), 'boing'], ...[0, 1, 2, 3, 4, 5].map(g => [b(1.5 + g * .5), 'pop']), [SC.naive.from, 'whoosh'], ...[0, 1, 2, 3, 4, 5, 6, 7].map(i => [b(8 + i * .5), 'popLow', i % 4]),
-  [SC.mechanism.from, 'swish'], [b(19), 'zip'], [SC.build.from, 'whooshIn'], [b(31), 'tick'], [b(36), 'ding'],
+  [SC.mechanism.from, 'swish'], [b(19), 'zip'], [SC.build.from, 'swish'], [b(31), 'tick'], [b(36), 'ding'],
   [SC.insight.from, 'whoosh'], [b(45), 'flag'], [SC.limits.from, 'swish'], [b(55), 'clonk'], [SC.loop.from, 'whooshOut'], [b(66), 'notify'],
 ];
 

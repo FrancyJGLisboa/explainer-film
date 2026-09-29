@@ -17,6 +17,13 @@ The film defines `BPM, BEAT, b`, `SC`, `MUSIC {kit, harmony, key, sfxGain}`, `SE
 It can also define `backdrop(t)` to replace the default `motes(t)`.
 Music layers: pad, pluck, hat8, kick2, kick4, bassHalf, clap. Harmonies: bright, wistful, dreamy, tense, folk, blues.
 
+## Narration (only when `src/narration.json` exists and `film.sh voice` has run)
+| call | notes |
+|---|---|
+| `said(scene, i=0)` | `{at, to}`: when line i of that scene is spoken. Use it to time visuals and words to the voice |
+| `speaking(t)` | true while any line is playing (e.g. `mood` / `squash` on the hero) |
+| `NARRATION` | the timing.json (null for a music-only film). `finish()` fails the check if a line overruns its scene |
+
 ## Words (screen space, inside `words(t)`)
 | call | notes |
 |---|---|

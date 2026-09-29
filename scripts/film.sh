@@ -3,7 +3,8 @@
 #   film.sh new <slug> ["Title"]   scaffold ~/films/<slug> (brief.md, src/head.js, src/scenes.js)
 #   film.sh check <dir>            build + contact sheet (qc/sheet.jpg) + asset audit + layout + rules (contrast, corners, timing)
 #   film.sh stills <dir> 4s,12s    full-size stills into qc/
-#   film.sh render <dir>           build + render <slug>.mp4 (+ .wav, cues) + sync/loudness check
+#   film.sh voice <dir>            narrate src/narration.json with Kokoro (free, local) -> voice/*.wav + beats each scene needs
+#   film.sh render <dir>           build + render <slug>.mp4 (+ .wav, cues) + sync/loudness check (+ voice mix if voice/ exists)
 set -e
 HERE=$(cd "$(dirname "$0")" && pwd); ROOT=$(dirname "$HERE")
 JA=$HOME/.agents/skills/javascript-animation/scripts; ST=$HOME/.agents/skills/soundtrack/scripts
@@ -32,9 +33,22 @@ case "$cmd" in
   stills)
     d=$(cd "$1" && pwd); sh "$HERE/build.sh" "$d" >/dev/null; cd "$RUN"
     node "$JA/render.mjs" "$d/piece.html" "$d/qc/still" --stills "$2" ;;
+  voice)
+    d=$(cd "$1" && pwd); T=$HOME/.cache/explainer-film/tts
+    if [ ! -x "$T/.venv/bin/python" ] || [ ! -f "$T/voices-v1.0.bin" ]; then
+      echo "first use: installing Kokoro TTS (free, local, ~350 MB) into $T"; mkdir -p "$T"
+      uv venv -q --python 3.12 "$T/.venv" && uv pip install -q --python "$T/.venv/bin/python" kokoro-onnx soundfile
+      R=https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0
+      curl -sSL -o "$T/kokoro-v1.0.onnx" "$R/kokoro-v1.0.onnx"; curl -sSL -o "$T/voices-v1.0.bin" "$R/voices-v1.0.bin"
+    fi
+    "$T/.venv/bin/python" "$HERE/voice.py" "$d" ;;
   render)
     d=$(cd "$1" && pwd); slug=$(basename "$d"); sh "$HERE/build.sh" "$d" >/dev/null; cd "$RUN"
     node "$JA/render.mjs" "$d/piece.html" "$d/$slug.mp4" | tail -3
-    node "$ST/sync-check.mjs" "$d/$slug.mp4" --cues-file "$d/$slug.cues.json" | tail -12 ;;
-  *) sed -n '2,7p' "$0"; exit 1 ;;
+    node "$ST/sync-check.mjs" "$d/$slug.mp4" --cues-file "$d/$slug.cues.json" | tail -12
+    if [ -f "$d/voice/timing.json" ]; then
+      node "$HERE/narrate-plan.mjs" "$d/piece.html" > "$d/voice/plan.json"
+      sh "$HERE/mix.sh" "$d" "$d/voice/plan.json"
+    fi ;;
+  *) sed -n '2,8p' "$0"; exit 1 ;;
 esac

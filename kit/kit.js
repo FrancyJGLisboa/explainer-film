@@ -294,6 +294,24 @@ function pathAlong(pts, u) {                      // point at fraction u along a
 function scenes(...list) { const out = {}; let at = 0; for (const [name, beats] of list) {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) CHECKS.push(`scene name "${name}": use letters, digits and _ only (it becomes SC.${name})`); out[name] = { from: b(at), to: b(at + beats), beats: [at, at + beats] }; at += beats; } out._beats = at; return out; }
 
+// ---------- narration (voice/timing.json from film.sh voice; null when the film is music only) ----------
+// Lines play in order inside their scene: the first starts `delay` beats after the scene starts, each next one `delay` beats after the last ends.
+function narrationPlan() {
+  if (!NARRATION) return [];
+  const plan = [], end = {};
+  for (const ln of NARRATION.lines) {
+    const sc = SC[ln.scene]; if (!sc) { CHECKS.push(`narration: line "${ln.text.slice(0, 30)}..." names scene "${ln.scene}", which does not exist`); continue; }
+    const at = (end[ln.scene] ?? sc.from) + b(ln.delay ?? .5); end[ln.scene] = at + ln.dur;
+    plan.push({ ...ln, at, to: at + ln.dur });
+  }
+  return plan;
+}
+let VO = [];                                      // filled by finish(): [{file, scene, text, at, to}]
+function said(scene, i = 0) {                     // time visuals and words to the voice: said('hook').at / .to
+  const l = VO.filter(v => v.scene === scene)[i]; return l || { at: SC[scene]?.from ?? 0, to: SC[scene]?.to ?? 0 };
+}
+function speaking(t) { return VO.some(v => t >= v.at && t <= v.to); }   // e.g. a character's mouth moves while this is true
+
 // ---------- frame ----------
 function frameAt(frame) {
   const t = frame / FPS;
@@ -307,6 +325,9 @@ function frameAt(frame) {
   window.LAYOUT = LAYOUT;
 }
 function finish() {                               // call once at the end of scenes.js
+  VO = narrationPlan();
+  VO.forEach(v => { const sc = SC[v.scene]; if (v.to > sc.to - .1) CHECKS.push(`narration: a "${v.scene}" line ends at ${v.to.toFixed(2)}s, after its scene ends at ${sc.to.toFixed(2)}s; give "${v.scene}" ${Math.ceil((v.to - sc.to + .35) / BEAT)} more beats`); });
+  window.NARRATION_PLAN = VO.map(v => ({ file: v.file, at: v.at }));
   if (Math.abs(SC._beats * BEAT - DUR) > .01) CHECKS.push(`storyboard is ${SC._beats} beats = ${(SC._beats * BEAT).toFixed(2)}s but DUR = ${DUR}s`);
   const bars = Math.round(DUR / (4 * BEAT)); let edge = 0;   // music must cover every bar, in order (1 bar = 4 beats)
   SECTIONS.forEach(([a, z]) => { if (a !== edge) CHECKS.push(`SECTIONS: bar ${edge} to ${a} has no music (sections must be contiguous from bar 0)`); edge = z; });
