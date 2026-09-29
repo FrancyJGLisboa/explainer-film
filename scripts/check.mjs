@@ -66,10 +66,17 @@ const res = await page.evaluate(EVERY => {
   out.checks = window.CHECKS;
   return out;
 }, EVERY);
+// the score must actually render: a thrown error here means a silent film
+const score = await page.evaluate(async () => {
+  if (typeof window.SCORE !== 'function') return 'no SCORE: the film would be silent';
+  try { const ac = new OfflineAudioContext(2, 48000 * 3, 48000); window.SCORE(ac); const buf = await ac.startRendering(); let pk = 0; for (const v of buf.getChannelData(0)) pk = Math.max(pk, Math.abs(v)); return pk > .001 ? '' : 'the first 3 s of the score are silent'; }
+  catch (e) { return 'the score fails to render (' + e.message + '): the film would be silent'; }
+});
 await browser.close();
 const span = ts => ts.length > 1 ? `${ts[0]}-${ts[ts.length - 1]}s` : `${ts[0]}s`;
 const fails = [];
 res.checks.forEach(c => fails.push(`storyboard: ${c}`));
+if (score) fails.push(`sound: ${score}`);
 Object.entries(res.low).forEach(([k, ts]) => fails.push(`contrast: "${k}" is hard to read against what is behind it at ${span(ts)}`));
 Object.entries(res.corner).forEach(([k, ts]) => fails.push(`corner: "${k}" sits in a corner at ${span(ts)}`));
 Object.entries(res.off).forEach(([k, ts]) => fails.push(`off-frame: "${k}" runs off the frame at ${span(ts)}`));

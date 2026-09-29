@@ -49,6 +49,7 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
   - Short sentences; "..." gives a breath.
   - For ASMR, keep `speed` at 0.85–0.9 and use fewer, calmer lines.
   - Keep the same claims discipline as the brief.
+- Narration makes films longer: 45 s of pictures with a voice usually needs 80–90 beats (50–56 s). Set DUR = beats × BEAT exactly (the check prints the value).
 - Run `film.sh voice <dir>`. The first use installs Kokoro (about 350 MB, once). It prints the beats each scene needs; set the `SC` beats to at least that, and set DUR to beats × BEAT.
 - In scenes.js, time visuals to the voice with `said('scene').at / .to`, and use `speaking(t)` to animate a character while the voice talks.
 - `film.sh check` fails if a line runs past its scene. `film.sh render` mixes the voice in, lowers the music under it and normalises loudness to −16 LUFS. It keeps `<slug>.music-only.mp4` too.
@@ -106,6 +107,8 @@ Then render again.
 - Tell the user in a few lines: what it shows, what was checked, and anything dropped for lack of a source.
 
 ## Hard rules
+- **A film is not done while any check fails.** `film.sh render` refuses to run until `film.sh check` passes. Never set FORCE=1 yourself (it is for a person), and never report a film as finished with failures.
+- The hero's colour is not any entity's colour: if red means "virus" or "wrong", the hero is not red.
 - Don't ask the user questions unless the input is empty. Pick sensible defaults and state them at the end.
 - No voice-over unless the user asks for one.
 - No brand names or logos of real companies on screen unless the input is about them.

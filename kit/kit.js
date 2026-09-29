@@ -372,12 +372,16 @@ function finish() {                               // call once at the end of sce
   VO = narrationPlan();
   VO.forEach(v => { const sc = SC[v.scene]; if (v.to > sc.to - .1) CHECKS.push(`narration: a "${v.scene}" line ends at ${v.to.toFixed(2)}s, after its scene ends at ${sc.to.toFixed(2)}s; give "${v.scene}" ${Math.ceil((v.to - sc.to + .35) / BEAT)} more beats`); });
   window.NARRATION_PLAN = VO.map(v => ({ file: v.file, at: v.at }));
-  if (Math.abs(SC._beats * BEAT - DUR) > .01) CHECKS.push(`storyboard is ${SC._beats} beats = ${(SC._beats * BEAT).toFixed(2)}s but DUR = ${DUR}s`);
+  if (Math.abs(SC._beats * BEAT - DUR) > .01) CHECKS.push(`storyboard is ${SC._beats} beats = ${(SC._beats * BEAT).toFixed(3)}s but DUR = ${DUR}s: set DUR = ${+(SC._beats * BEAT).toFixed(4)} in src/head.js (or change the beats)`);
   const bars = Math.round(DUR / (4 * BEAT)); let edge = 0;   // music must cover every bar, in order (1 bar = 4 beats)
   SECTIONS.forEach(([a, z]) => { if (a !== edge) CHECKS.push(`SECTIONS: bar ${edge} to ${a} has no music (sections must be contiguous from bar 0)`); edge = z; });
   if (edge !== bars) CHECKS.push(`SECTIONS end at bar ${edge} but the film has ${bars} bars (DUR / (4 x BEAT))`);
   let sEdge = 0; SHOTS.forEach(s => { if (Math.abs(s.from - sEdge) > 1e-6) CHECKS.push(`SHOTS: gap or overlap at ${sEdge.toFixed(2)}s`); sEdge = s.to; });
   if (sEdge < DUR - 1e-6) CHECKS.push(`SHOTS end at ${sEdge.toFixed(2)}s, before DUR`);
+  const SFX = 'click clack switch whooshIn whooshOut whoosh boing clank ding pop popLow tick swish thud clonk creak blip zip flag alarm step notify drip'.split(' ');
+  const LAYERS = 'pad pluck hat8 kick2 kick4 bassHalf clap'.split(' ');
+  EVENTS.forEach(([at, name]) => { if (!SFX.includes(name)) CHECKS.push(`sound "${name}" at ${at.toFixed(2)}s is not a sound effect${LAYERS.includes(name) ? ' (it is a music layer: put it in SECTIONS)' : ''}; use one of: ${SFX.join(', ')}`); });
+  SECTIONS.forEach(([a, , ls]) => ls.forEach(l => { if (!LAYERS.includes(l)) CHECKS.push(`SECTIONS bar ${a}: "${l}" is not a music layer; use: ${LAYERS.join(', ')}`); }));
   EVENTS.forEach(([at, name]) => { if (at < 0 || at > DUR) CHECKS.push(`sound "${name}" at ${at.toFixed(2)}s is outside the film`); });
   window.draw = frameAt; window.FRAMES = FRAMES; window.FPS = FPS;
   window.CUES = SHOTS.slice(1).map(s => s.from);

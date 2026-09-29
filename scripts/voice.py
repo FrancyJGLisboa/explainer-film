@@ -22,10 +22,13 @@ beat = 60 / bpm
 k = Kokoro(str(TTS / "kokoro-v1.0.onnx"), str(TTS / "voices-v1.0.bin"))
 out = film / "voice"; out.mkdir(exist_ok=True)
 for old in out.glob("*.wav"): old.unlink()
-voice, speed, lang = spec.get("voice", "af_heart"), spec.get("speed", 0.9), spec.get("lang", "en-us")
+LANGS = {"en": "en-us", "en_us": "en-us", "en-us": "en-us", "en-gb": "en-gb", "en_gb": "en-gb", "british": "en-gb",
+         "pt": "pt-br", "pt_br": "pt-br", "pt-br": "pt-br", "es": "es", "fr": "fr-fr", "it": "it", "ja": "ja", "zh": "zh", "hi": "hi"}
+norm = lambda l: LANGS.get(str(l).lower().replace(" ", ""), l)       # accept en / en-US / en_US / pt ...
+voice, speed, lang = spec.get("voice", "af_heart"), spec.get("speed", 0.9), norm(spec.get("lang", "en-us"))
 timing, need = [], {}
 for i, ln in enumerate(spec["lines"]):
-    audio, sr = k.create(ln["text"], voice=ln.get("voice", voice), speed=ln.get("speed", speed), lang=ln.get("lang", lang))
+    audio, sr = k.create(ln["text"], voice=ln.get("voice", voice), speed=ln.get("speed", speed), lang=norm(ln.get("lang", lang)))
     f = f"{i:02d}_{ln['scene']}.wav"; sf.write(out / f, audio, sr)
     dur = len(audio) / sr; delay = ln.get("delay", 0.5)
     hop = sr // 30                                  # loudness envelope at 30 fps, for lip-sync (voiceLevel in the kit)

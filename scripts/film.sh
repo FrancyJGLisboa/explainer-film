@@ -42,7 +42,7 @@ case "$cmd" in
   render-long)
     d=$(cd "$1" && pwd); slug=$(basename "$d"); list="$d/.chapters.txt"; : > "$list"
     for c in "$d"/ch*/; do c=${c%/}; cs=$(basename "$c")
-      if [ ! -f "$c/$cs.mp4" ] || [ -n "$(find "$c/src" "$c/voice" -newer "$c/$cs.mp4" -type f 2>/dev/null | head -1)" ]; then echo "== render $cs"; sh "$0" render "$c" | tail -3; else echo "== $cs unchanged"; fi
+      if [ ! -f "$c/$cs.mp4" ] || [ -n "$(find "$c/src" "$c/voice" -newer "$c/$cs.mp4" -type f 2>/dev/null | head -1)" ]; then echo "== render $cs"; sh "$0" render "$c" || { echo "REFUSED: $cs fails its checks"; exit 1; }; else echo "== $cs unchanged"; fi
       echo "file '$c/$cs.mp4'" >> "$list"; done
     FF=$(command -v ffmpeg || echo /usr/local/bin/ffmpeg)
     "$FF" -y -loglevel error -f concat -safe 0 -i "$list" -c:v copy -c:a aac -b:a 192k "$d/$slug.mp4"
@@ -55,6 +55,9 @@ case "$cmd" in
     s=0
     out=$(node "$JA/layout-check.mjs" "$d/piece.html") || s=1; echo "$out" | tail -4
     node "$HERE/check.mjs" "$d/piece.html" || s=1
+    # claim tests must test something: a constant condition is a fake pass
+    fake=$(grep -nE "shows\([^;]*,[[:space:]]*(true|1|!0)[[:space:]]*[,)]" "$d/src/scenes.js" || true)
+    [ -z "$fake" ] || { echo "fake claim test: shows(..., true) passes without testing the picture; compute the condition from the numbers you draw:"; echo "$fake"; s=1; }
     # the scaffold is a demo about generic growth: a film must replace it, not re-label it
     sim=$(python3 -c "import difflib,sys; a=open(sys.argv[1]).read().splitlines(); b=open(sys.argv[2]).read().splitlines(); print(round(difflib.SequenceMatcher(None,a,b).ratio()*100))" "$d/src/scenes.js" "$ROOT/kit/scenes.template.js")
     if [ "$sim" -gt 50 ]; then echo "template reuse: src/scenes.js is ${sim}% identical to the demo template; rewrite the scenes for this film's topic (keep the structure, replace the content)"; s=1; fi
@@ -72,7 +75,12 @@ case "$cmd" in
     fi
     "$T/.venv/bin/python" "$HERE/voice.py" "$d" ;;
   render)
-    d=$(cd "$1" && pwd); slug=$(basename "$d"); sh "$HERE/build.sh" "$d" >/dev/null; cd "$RUN"
+    d=$(cd "$1" && pwd); slug=$(basename "$d")
+    # hard gate: a film that fails its checks is not finished, so it does not render (a person can override with FORCE=1)
+    if [ "${FORCE:-0}" != 1 ]; then
+      if ! out=$(sh "$0" check "$d" 5 2>&1); then echo "$out" | grep -vE '^(contact sheet|CLEAN: /)'; echo "REFUSED: fix the failures above, then render again. The film is not done while any check fails."; exit 1; fi
+    fi
+    sh "$HERE/build.sh" "$d" >/dev/null; cd "$RUN"
     node "$JA/render.mjs" "$d/piece.html" "$d/$slug.mp4" | tail -3
     node "$ST/sync-check.mjs" "$d/$slug.mp4" --cues-file "$d/$slug.cues.json" | tail -12
     if [ -f "$d/voice/timing.json" ]; then

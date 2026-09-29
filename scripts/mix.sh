@@ -3,7 +3,10 @@
 # (sidechain), then loudness is normalised to -16 LUFS. Keeps the music-only cut as <slug>.music-only.mp4.
 set -e
 d=$1; plan=$2; slug=$(basename "$d"); FF=$(command -v ffmpeg || echo /usr/local/bin/ffmpeg)
+FP=$(command -v ffprobe || echo /usr/local/bin/ffprobe)
+"$FP" -v error -select_streams a -show_entries stream=codec_type -of csv=p=0 "$d/$slug.mp4" | grep -q audio || { echo "mix: $slug.mp4 has no audio track (the score failed to render); fix the score, then render again"; exit 1; }
 mv -f "$d/$slug.mp4" "$d/$slug.music-only.mp4"
+trap '[ -s "$d/$slug.mp4" ] || cp "$d/$slug.music-only.mp4" "$d/$slug.mp4"' EXIT   # never leave a broken file behind
 set -- -y -loglevel error -i "$d/$slug.music-only.mp4"
 n=$(python3 -c "import json,sys; print(len(json.load(open(sys.argv[1]))))" "$plan")
 filt=""; labels=""
