@@ -49,6 +49,7 @@ Music layers: pad, pluck, hat8, kick2, kick4, bassHalf, clap. Harmonies: bright,
 | call | notes |
 |---|---|
 | `kine(str, x, y, t, at, out, {size=72, col=TEXT, align='left', w=800})` | a headline. Words spring up at `at` and leave upward at `out`. `*word*` uses the THREAD colour; `{word\|#hex}` uses any colour |
+| `callout(str, px, py, lx, ly, p, {bg, fg, size, align})` | label something without covering it: the pill sits in empty space at (lx, ly) with a leader line and dot at the point it names (px, py) |
 | `pill(str, x, y, p, {bg, fg, size=28, align, id})` | a small label on its own background. Use `inOut(t, a, z)` to open and close it |
 | `bubble(x, y, w, h, p, txt, {size, type})` | a speech bubble growing from its tail tip at (x, y). `type` is 0..1 typing progress |
 | `eq(parts, x, y, t, at, out, {size=72, align})` | coloured maths. Parts look like `[['A', VAR.yellow], [' = '], ['^n', VAR.red], ['_0']]`: `^` raises a part, `_` lowers it |

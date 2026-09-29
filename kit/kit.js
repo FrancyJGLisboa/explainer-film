@@ -70,6 +70,12 @@ function pill(str, x, y, p, o = {}) {             // small label on its own back
   ctx.restore();
   if (id && p > .9) claimText(id, x0, y - h / 2, w, h, fg, true);
 }
+function callout(str, px, py, lx, ly, p, o = {}) {   // a label in empty space (lx, ly) with a leader line to the point it names (px, py)
+  if (p <= 0) return;
+  const { bg = TEXT, fg = DEEP, size = 26, align = 'center', id = 'callout ' + str } = o, e = easeOut(p);
+  strokeLine([[px, py], [lerp(px, lx, e), lerp(py, ly, e)]], bg, 3); circ(px, py, 6 * e, bg);
+  pill(str, lx, ly, p, { bg, fg, size, align, id });
+}
 const inOut = (t, a, z, d = .35) => Math.min(prog(t, a, a + d), 1 - prog(t, z - d, z));   // 0..1 open window
 
 // ---------- 3Blue1Brown parts: math as objects ----------
@@ -93,16 +99,17 @@ function eq(parts, x, y, t, at, out, o = {}) {
   if (t > at + .3 && t < out) claimText(id, left, y - size * 1.05, total, size * 1.35, TEXT);
 }
 function axes(o) {                                // returns mappers + a draw(p) that draws the axes on
-  const { x, y, w, h, xmax = 1, ymax = 1, xlabel = '', ylabel = '', col = MUTED, ticks = 0 } = o;
+  const { x, y, w, h, xmax = 1, ymax = 1, xlabel = '', ylabel = '', col = MUTED, ticks = 0, numbers = false } = o;   // numbers: label each tick with its value
   const X = u => x + u / xmax * w, Y = v => y + h - v / ymax * h;
   return { X, Y, draw(p, lw = 4) {
     if (p <= 0) return;
     const a = easeOut(p);
     strokeLine([[x, y + h], [x + w * a, y + h]], col, lw); strokeLine([[x, y + h], [x, y + h - h * a]], col, lw);
     if (a > .95) { tri(x + w + 16, y + h, x + w - 2, y + h - 9, x + w - 2, y + h + 9, col); tri(x, y - 16, x - 9, y + 2, x + 9, y + 2, col); }
-    for (let i = 1; i <= ticks; i++) { const tx = x + w * i / ticks; if (tx < x + w * a) strokeLine([[tx, y + h - 8], [tx, y + h + 8]], col, 3); }
+    for (let i = 1; i <= ticks; i++) { const tx = x + w * i / ticks; if (tx < x + w * a) { strokeLine([[tx, y + h - 8], [tx, y + h + 8]], col, 3);
+      if (numbers && !HIDE_WORDS) { ctx.font = MATH(24, false); ctx.fillStyle = col; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText(String(+(xmax * i / ticks).toFixed(2)), tx, y + h + 14); } } }
     ctx.save(); ctx.globalAlpha *= prog(p, .6, 1); ctx.font = MATH(38); ctx.fillStyle = col; ctx.textBaseline = 'middle';
-    if (!HIDE_WORDS) { ctx.textAlign = 'right'; ctx.fillText(xlabel, x + w, y + h + 42); ctx.textAlign = 'left'; ctx.fillText(ylabel, x + 18, y - 6); }
+    if (!HIDE_WORDS) { ctx.textAlign = 'right'; ctx.fillText(xlabel, x + w, y + h + (numbers ? 70 : 42)); ctx.textAlign = 'left'; ctx.fillText(ylabel, x + 18, y - 6); }
     ctx.restore();
   } };
 }
@@ -146,7 +153,8 @@ function numberLine(x, y, w, min, max, p, o = {}) {  // ticks + numbers, drawn o
   return X;
 }
 function bars(x, y, w, h, values, max, p, cols, o = {}) {   // bars that grow, one after another (quantities -> lengths)
-  const { gap = .25, stagger = .12 } = o, n = values.length, bw = w / (n + (n - 1) * gap);
+  const { gap = .25 } = o, n = values.length, bw = w / (n + (n - 1) * gap);
+  const stagger = Math.min(o.stagger ?? .12, n > 1 ? .5 / (n - 1) : 0);   // the last bar always finishes at p = 1
   values.forEach((v, i) => { const q = back(prog(p, i * stagger, i * stagger + .5)); if (q <= 0) return;
     const bh = h * v / max * q, bx = x + i * bw * (1 + gap); rr(bx, y + h - bh, bw, bh, Math.min(10, bw / 4), cols[i % cols.length]); });
   return i => [x + i * bw * (1 + gap) + bw / 2, y + h - h * values[i] / max];
@@ -386,6 +394,7 @@ function finish() {                               // call once at the end of sce
   EVENTS.forEach(([at, name]) => { if (at < 0 || at > DUR) CHECKS.push(`sound "${name}" at ${at.toFixed(2)}s is outside the film`); });
   window.draw = frameAt; window.FRAMES = FRAMES; window.FPS = FPS;
   window.CUES = SHOTS.slice(1).map(s => s.from);
+  window.SCENE_LIST = Object.entries(SC).filter(([k]) => k !== '_beats').map(([name, s]) => ({ name, from: s.from, to: s.to }));
   window.CHECKS = CHECKS; window.getWords = () => [...WORD_LOG];
   window.setHideWords = v => { HIDE_WORDS = v; }; window.setHideBackdrop = v => { HIDE_BACKDROP = v; }; window.setHideHero = v => { HIDE_HERO = v; }; window.BG_HEX = BG;
   window.SCORE = ac => buildGroove(ac, { dur: DUR, bpm: BPM, sections: SECTIONS, events: EVENTS, ...MUSIC });

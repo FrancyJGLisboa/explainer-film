@@ -47,6 +47,15 @@ Say "narrated" or "with an ASMR voice" and the film gets a voice-over from [Koko
 `af_bella`, `bf_emma` (British), `pf_dora` / `pm_alex` (Brazilian Portuguese). The voice is made first and the scenes are sized to
 fit it. The music is lowered under the voice automatically, and a music-only cut is kept too.
 
+## Maker is not the judge
+Automated checks can be gamed, and in our tests agents gamed every one: a giant hero to fill the frame, faint wallpaper, claim tests that test nothing, scene lengths posing as facts.
+So once `film.sh check` passes, `film.sh review` hands stills of every scene to a **fresh reviewer that didn't make the film** (the `claude` CLI, with fixed instructions in `references/reviewer.md` that the maker can't edit).
+- It blocks only on real failures (the picture contradicts the words, the mechanism is wrong, filler, visible bugs, colour lies, cheap framing); everything else becomes a non-blocking suggestion.
+- It sees its previous verdict, so it converges instead of moving the goalposts. After 3 rejections the pipeline stops and hands the film to a person.
+- `render` needs an approval of the exact current build; any edit voids it.
+
+Calibration: it rejected all 7 scenes of a gamed agent film. On the demo template it caught a limits curve that grew *faster* than the unlimited one (a real maths error the automated checks missed), bars that never finished growing (a kit bug), and colour clashes. It approved the template after the fixes.
+
 ## What the checks catch
 `scripts/check.mjs`, run by `film.sh check`, fails the build on:
 - **pictures that contradict their words**: each reality-map row has a test the code runs on what it draws (`shows(...)`). "It explodes" has to mean the curve ends at least 5× steeper than it starts

@@ -34,7 +34,7 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
 
 **1. Scaffold.** `film.sh new <slug> "<Title>"` prints the folder.
 
-**2. Brief (`brief.md`).** Fill in the template:
+**2. Brief (`brief.md`).** Fill in the template (`kit/brief.example.md` is a filled one, for the demo film):
 - **Core idea:** one sentence.
 - **Hunch:** research the mechanism first. If facts or numbers matter, use web search, and prefer primary sources.
 - **Transcript:** condense to its 1 core idea and 6–8 beats. Keep the speaker's claims and add none of your own.
@@ -95,6 +95,8 @@ Then open `qc/sheet.jpg` and answer this in writing, scene by scene, fixing ever
 5. Do the words and the picture agree on colour (same quantity, same VAR colour)?
 
 Use `film.sh stills <dir> 12s,20s` to look closer. Don't render until the check passes and all five answers are yes.
+
+**5b. Independent review.** When `film.sh check` passes, run `film.sh review <dir>`. A fresh reviewer that did not make the film judges stills of every scene against fixed rules you cannot change. Fix every blocking problem it lists, then check and review again. Suggestions are optional. After 3 rejections the script stops: report the verdict to the user and let them decide. Render needs an approval of the exact current build, so any change after approval means reviewing again.
 
 **6. Render.** `film.sh render <dir>`, about 2.5 min. Cues are the scene starts (SHOTS). If sync-check reports:
 - **STARTLE** (loudness jump > 6 dB): bring the music layers in more gradually around that cut (1–2 new layers per bar, never kick and bass together) or use a softer sfx.
