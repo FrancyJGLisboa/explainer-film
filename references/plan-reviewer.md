@@ -30,7 +30,7 @@ Read `plan-packet.md` in the current directory.
 
 ## Verdict rules
 - **Blocking** problems are only the seven types above. Better ideas that are not required go in `suggestions`.
-- `approved` is true only if nothing blocks. When unsure whether something blocks, it blocks.
+- `approved` is true only if nothing blocks. Local corrections described under Proportion are conditions, not blocks: approve and list them. When unsure whether something is a design problem (blocks) or a local correction (condition), it blocks.
 - Each problem names the scene (or the brief section), says what is wrong in one sentence, and gives one concrete fix:
   what the picture should show instead. No vague advice.
 - If the packet includes a **previous plan review**, check each earlier required fix first, and don't raise as blocking
