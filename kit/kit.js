@@ -321,6 +321,57 @@ function confetti(t, at, x, y, cols = [THREAD, HERO, WRONG, TEXT]) {   // a burs
   for (let i = 0; i < 28; i++) { const a = hash2(i, 11) * 6.2832, v = 380 + hash2(i, 12) * 520;
     circ(x + Math.cos(a) * v * u, y + Math.sin(a) * v * u + 520 * u * u, (5 + hash2(i, 13) * 7) * (1 - u / 1.6), cols[i % cols.length]); }
 }
+// ---------- interaction parts: things that fit, lock, and change state ----------
+// Shapes that fit: a key on a pathogen/antigen fits only the lock of the same kind ('tri' | 'square' | 'round').
+// Show a mechanism as contact: one thing travels to another and locks on (lockOn), then something happens (burst, badge).
+function keyTip(kind, s, col) {                   // a small key shape at the local origin, pointing up
+  ctx.fillStyle = col; ctx.beginPath();
+  if (kind === 'tri') { ctx.moveTo(-s, 0); ctx.lineTo(0, -s * 1.3); ctx.lineTo(s, 0); }
+  else if (kind === 'square') { ctx.rect(-s * .8, -s * 1.4, s * 1.6, s * 1.4); }
+  else { ctx.arc(0, -s * .6, s * .8, 0, 7); }
+  ctx.fill();
+}
+function pathogen(x, y, r, col, o = {}) {         // a spiky particle; each spike ends in its key shape. o.hit (0..1) squashes it as it is destroyed
+  const { kind = 'tri', spikes = 9, t = 0, hit = 0 } = o, k = 1 - hit * .4;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(t * .3); ctx.scale(k, k);
+  for (let i = 0; i < spikes; i++) { ctx.save(); ctx.rotate(i / spikes * 6.2832); strokeLine([[0, -r * .9], [0, -r * 1.35]], tint(col, .8), r * .12); ctx.translate(0, -r * 1.35); keyTip(kind, r * .18, tint(col, 1.2)); ctx.restore(); }
+  circ(0, 0, r, col); circ(-r * .3, -r * .3, r * .28, tint(col, 1.25)); ctx.restore();
+}
+function spikeTip(x, y, r, i, o = {}) {           // where spike i of pathogen(x, y, r) ends (to aim an antibody at it)
+  const { spikes = 9, t = 0 } = o, a = i / spikes * 6.2832 + t * .3 - Math.PI / 2; return [x + Math.cos(a) * r * 1.55, y + Math.sin(a) * r * 1.55, a];
+}
+function antibody(x, y, s, rot, col, o = {}) {    // a Y shape; both arm tips are locks of `kind` (they fit that key)
+  const { kind = 'tri' } = o;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s);
+  strokeLine([[0, 60], [0, 0]], col, 14); strokeLine([[0, 0], [-34, -44]], col, 14); strokeLine([[0, 0], [34, -44]], col, 14);
+  [[-34, -44, -.66], [34, -44, .66]].forEach(([ax, ay, a]) => { ctx.save(); ctx.translate(ax, ay); ctx.rotate(a); circ(0, -6, 16, col); ctx.translate(0, 8); keyTip(kind, 9, BG); ctx.restore(); });   // the lock: a notch the matching key fills
+  ctx.restore();
+}
+function lockOn(x0, y0, x1, y1, p) {              // travel from (x0, y0) to (x1, y1) and snap on at the end: [x, y, locked]
+  const e = back(clamp(p)); return [lerp(x0, x1, e), lerp(y0, y1, e), p >= 1];
+}
+function bindTo(px, py, r, i, p, col, o = {}) {    // an antibody flies in and clamps its arms around spike i of pathogen(px, py, r): the whole contact move
+  const { spikes = 9, t = 0, from = 520, kind = 'tri', s = 1 } = o, [tx, ty, a] = spikeTip(px, py, r, i, { spikes, t });
+  const [x, y] = lockOn(tx + Math.cos(a) * from, ty + Math.sin(a) * from, tx + Math.cos(a) * 50 * s, ty + Math.sin(a) * 50 * s, p);
+  if (p > 0) antibody(x, y, s, a - Math.PI / 2, col, { kind });   // arms face the pathogen
+  return p >= 1;
+}
+function burst(x, y, t, at, col, r = 60) {        // something is destroyed: pieces fly out and shrink (no fade)
+  const u = t - at; if (u < 0 || u > 1.2) return;
+  for (let i = 0; i < 14; i++) { const a = i / 14 * 6.2832 + hash2(i, 3), v = r * (2 + hash2(i, 4) * 2);
+    circ(x + Math.cos(a) * v * u, y + Math.sin(a) * v * u, r * .18 * (1 - u / 1.2), col); }
+  ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = 6 * (1 - u / 1.2); ctx.beginPath(); ctx.arc(x, y, r * (1 + u * 2), 0, 7); ctx.stroke(); ctx.restore();
+}
+function badge(x, y, r, p, o = {}) {              // mark a state on something (memory, trained, infected...): a disc with an icon, springs on
+  if (p <= 0) return;
+  const { icon = 'star', col = VAR.gold, fg = DEEP } = o, k = back(p);
+  ctx.save(); ctx.translate(x, y); ctx.scale(k, k); circ(0, 0, r, col); ctx.fillStyle = fg; ctx.strokeStyle = fg; ctx.lineWidth = r * .22; ctx.lineCap = 'round';
+  if (icon === 'star') { ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = i / 10 * 6.2832 - Math.PI / 2, rr2 = i % 2 ? r * .3 : r * .7; ctx.lineTo(Math.cos(a) * rr2, Math.sin(a) * rr2); } ctx.fill(); }
+  else if (icon === 'check') { ctx.beginPath(); ctx.moveTo(-r * .4, 0); ctx.lineTo(-r * .1, r * .3); ctx.lineTo(r * .45, -r * .35); ctx.stroke(); }
+  else { ctx.font = SANS(r); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(icon, 0, r * .05); }
+  ctx.restore();
+}
+
 function counter(n) { return Math.round(n).toLocaleString('en-US'); }
 function pathAlong(pts, u) {                      // point at fraction u along a polyline (for a dot that travels a route)
   const L = [0]; for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));

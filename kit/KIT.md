@@ -40,6 +40,17 @@ Music layers: pad, pluck, hat8, kick2, kick4, bassHalf, clap. Harmonies: bright,
 | `texMorph(a, b, x, y, p, {size, align})` | glyphs shared by both equations travel to their new places; the rest shrink out or grow in |
 | `texBox(key, size)` | `{w, h}` for layout |
 
+## Interaction (show contact, then the result)
+| call | notes |
+|---|---|
+| `pathogen(x, y, r, col, {kind, spikes, t, hit})` | spiky particle; each spike ends in a key of `kind` ('tri' / 'square' / 'round'); `hit` 0..1 squashes it |
+| `spikeTip(x, y, r, i, {spikes, t})` | `[x, y, angle]` where spike i ends: aim things at it |
+| `antibody(x, y, s, rot, col, {kind})` | a Y whose tips are locks that fit keys of the same `kind` (a true "fits only its match") |
+| `bindTo(px, py, r, i, p, col, {kind, spikes, t, from, s})` | the whole contact move: an antibody flies in and locks its arms onto spike i. Returns true once locked |
+| `lockOn(x0, y0, x1, y1, p)` | `[x, y, locked]`: travel and snap on at p = 1 (for your own shapes) |
+| `burst(x, y, t, at, col, r)` | destroyed: pieces fly out and shrink |
+| `badge(x, y, r, p, {icon: 'star' / 'check' / text, col})` | mark a changed state (memory, trained, infected) |
+
 ## Chapters
 | call | notes |
 |---|---|

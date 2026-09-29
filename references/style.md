@@ -43,6 +43,12 @@ Numbers on screen come from the brief's sources. Illustrative data is labelled a
 5. One continuous thread (the THREAD dot, or a shape that morphs), so there are no hard cuts.
 6. Every visible action gets a sound on the beat; cuts land on bar lines.
 
+## Show the mechanism as contact
+Most explanations are about something acting on something else. Show the contact, not two things near each other:
+one thing travels to the other and **locks on** (`lockOn`, `antibody` + `pathogen` with matching `kind`),
+then the result happens on screen (`burst` for destroyed, `badge` for a changed state like "memory", a count going up).
+A picture where the actors float apart has not shown the mechanism.
+
 ## Composition (checked by frame fill)
 - 16:9: hero on the left third (s ≥ 1.1) on its DISC; the main visual fills the right two thirds; words in the empty band above or below it.
 - 9:16: hero in the top third, visual in the middle, words at the bottom.
@@ -50,5 +56,9 @@ Numbers on screen come from the brief's sources. Illustrative data is labelled a
 - The last scene keeps the story's object on screen. It never ends on a bare character.
 
 ## Palette guide
-Keep BG/DEEP/DISC/TEXT dark and neutral. Retune HERO and THREAD to the topic (money: gold hero, green thread;
-biology: coral hero, teal thread; climate: sand hero, blue thread). VAR colours come from 3b1b and stay fixed.
+Keep BG/DEEP/DISC/TEXT dark and neutral. VAR colours come from 3b1b and stay fixed.
+**Assign colours by meaning first, then pick the hero from what is left.** List every entity and quantity in the film,
+give each one colour, and keep red/coral (WRONG) for whatever the film calls dangerous or wrong. The hero gets a colour
+no entity uses (the default pink `#f4a7b9`, or lilac, cream, sky). THREAD (teal) is only the travelling dot and accent words,
+never an entity. Examples: biology (pathogen red, antibodies gold, cells blue, hero pink); money (gains green, costs red, hero cream);
+climate (heat red, water blue, land sand, hero lilac).

@@ -105,7 +105,7 @@ const WORLD = {
     parallax(cam, .8, () => wavesLayer(t, H * .92, mixHex(BG, NIGHTFALL, .35), 22, .9, 3));
   },
   micro(t, cam, o = {}) {                          // microscopic: drifting cells at three depths, soft focus behind
-    const { cellCol = mixHex(BG, AIR, .18), nucleus = mixHex(WRONG, BG, .45) } = o;
+    const { cellCol = mixHex(BG, AIR, .18), nucleus = mixHex(BG, AIR, .38) } = o;   // neutral nuclei: red is reserved for what the film calls dangerous
     parallax(cam, .1, () => { ctx.save(); ctx.filter = 'blur(6px)'; for (let i = 0; i < 9; i++) membrane(hash2(i, 1) * W, (hash2(i, 2) * H + t * 6) % (H + 200) - 100, 60 + hash2(i, 3) * 90, shade(cellCol, .8), t, i); ctx.restore(); });
     parallax(cam, .35, () => { for (let i = 0; i < 6; i++) membrane(hash2(i, 5) * W, (hash2(i, 6) * H - t * 10 + H * 5) % (H + 300) - 150, 80 + hash2(i, 7) * 70, cellCol, t, i + 20, { nucleus }); });
     parallax(cam, .6, () => { for (let i = 0; i < 40; i++) circ((hash2(i, 9) * W + t * 12) % W, (hash2(i, 10) * H + t * 4) % H, 3 + hash2(i, 11) * 5, 'rgba(245,240,230,.08)'); });
