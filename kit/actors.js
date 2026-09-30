@@ -96,7 +96,7 @@ function actor(name, x, y, s, st = {}) {
   const handAt = (side, a) => { const th = -side * (.5 + a), [px, py] = pivot(side), lx = px - A.len * Math.sin(th), ly = py + A.len * Math.cos(th); return [x + face * s * grow * lx, y + s * grow * (ly - bob)]; };
   const out = { name, x, y, s, face, handR: handAt(1, aR), handL: handAt(-1, aL), head: [x, y + s * grow * (S.eye.y - bob)], top: [x, y + s * grow * (S.top - bob)] };
   out.hand = out.handR;
-  LAYOUT.push({ kind: 'actor', id: name, x: x - S.bodyW * s / 2, y: y + S.top * s, w: S.bodyW * s, h: -S.top * s, s, col: body });
+  LAYOUT.push({ kind: 'actor', presenter: !!st.presenter, id: name, x: x - S.bodyW * s / 2, y: y + S.top * s, w: S.bodyW * s, h: -S.top * s, s, col: body });
   return out;
 }
 function actorFace(S, { mood, look, blink, talk, body }) {
@@ -168,4 +168,15 @@ function say(a, text, p, o = {}) {
   claimText('say ' + a.name + ': ' + text, side < 0 ? tx - w : tx, ty - size * 1.7 - 30, w, size * 1.7, o.fg || DEEP, true, o.col || CARD);
 }
 // walkTo(t, t0, t1, x0, x1): position and step phase for a character walking from x0 to x1 between t0 and t1
+// presenter(x, y, s, st): the film's host. A private cast may name one (const PRESENTER = '<actor>'); otherwise the kit's blob.
+// Like the blob, the presenter is hidden when QC measures frame fill, needs no Cast row and does not count toward the 3.
+// st as for blob/actor (mood, look, blink, talk, armR, waveR, walk, grow), plus samba (a celebration step, if the presenter has one).
+function presenter(x, y, s, st = {}) {
+  if (typeof PRESENTER === 'undefined' || !ACTORS[PRESENTER]) { blob(x, y, s, st); return null; }
+  const S = ACTORS[PRESENTER], k = s * 300 / S.h * 1.6;            // about 1.6x the blob's height: a tall presenter
+  if (HIDE_HERO) { ctx.save(); ctx.globalAlpha = 0; }
+  const a = actor(PRESENTER, x, y, k, { ...st, presenter: true, t: st.t ?? 0 });
+  if (HIDE_HERO) ctx.restore();
+  return a;
+}
 function walkTo(t, t0, t1, x0, x1) { const p = prog(t, t0, t1), x = lerp(x0, x1, ease(p)); return { x, walk: p > 0 && p < 1 ? (t - t0) * 2.2 : 0, face: x1 >= x0 ? 1 : -1 }; }

@@ -54,8 +54,8 @@ const res = await page.evaluate(([EVERY, MINC]) => {
       for (let y = 0; y < H; y += 3) for (let xx = 0; xx < W; xx += 3) if (isArt(d, (y * W + xx) * 4)) occ.add(Math.floor(y / CELL) * 1000 + Math.floor(xx / CELL));
       let bx0 = 1e9, by0 = 1e9, bx1 = -1, by1 = -1; for (const k of occ) { const cy = Math.floor(k / 1000), cx = k % 1000; bx0 = Math.min(bx0, cx); bx1 = Math.max(bx1, cx); by0 = Math.min(by0, cy); by1 = Math.max(by1, cy); }
       out.fill.push([+t.toFixed(2), occ.size / (Math.ceil(W / CELL) * Math.ceil(H / CELL)), bx1 < 0 ? null : [bx0 * CELL, by0 * CELL, (bx1 + 1) * CELL, (by1 + 1) * CELL]]); }
-    { const acts = (window.LAYOUT || []).filter(L => L.kind === 'actor' && !L.guide), seen = {};                   // cast on screen, and items drawn twice
-      (window.LAYOUT || []).filter(L => L.kind === 'actor' && L.guide).forEach(L => { out.guides[L.id] = 1; });
+    { const acts = (window.LAYOUT || []).filter(L => L.kind === 'actor' && !L.guide && !L.presenter), seen = {};                   // cast on screen, and items drawn twice
+      (window.LAYOUT || []).filter(L => L.kind === 'actor' && (L.guide || L.presenter)).forEach(L => { out.guides[L.id] = 1; });
       acts.forEach(A => { out.cast[A.id] = A.col; if (A.s > 1.3) (out.castBig[A.id] ||= []).push(t.toFixed(2)); });
       if (acts.length > out.castMax[0]) out.castMax = [acts.length, +t.toFixed(2)];
       (window.LAYOUT || []).filter(L => L.kind === 'item').forEach(L => { if (seen[L.id]) (out.dupItems[L.id] ||= []).push(t.toFixed(2)); seen[L.id] = 1; }); }

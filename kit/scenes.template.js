@@ -52,7 +52,7 @@ function world(t) {
   const { x, y, s } = HERO_AT;
   circ(x, y - 190 * s, 260 * s * back(prog(t, b(.5), b(1.5))), DISC);
   const mood = t > b(45) ? 'happy' : t > SC.build.from ? 'think' : 'plain';
-  blob(x, y, s, { grow: back(prog(t, b(1), b(2))), mood, look: t > SC.naive.from ? 1 : 0, blink: blinkAt(t), armR: t > b(45) && t < b(50) ? 2 : 0 });
+  presenter(x, y, s, { t, grow: back(prog(t, b(1), b(2))), mood, look: t > SC.naive.from ? 1 : 0, blink: blinkAt(t), talk: voiceLevel(t), armR: t > b(45) && t < b(50) ? 2 : 0, samba: t > b(45) && t < b(50) });   // the film's host (the cast's presenter, or the blob)
 
   // hook: rows of dots, each row the last one doubled (1, 2, 4, 8, 16): a still frame already shows "doubling"
   if (t < SC.naive.from + 1) {
