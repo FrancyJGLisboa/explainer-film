@@ -37,6 +37,10 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
 
 ## Pipeline
 
+**0. Input from a link.** If the user gives a URL (an article, or a YouTube/Vimeo/TikTok video), run `film.sh fetch <url> <dir>` after scaffolding. It saves the article text or the video's transcript as `<dir>/source.md`; treat it as the transcript. Never pull footage or clips, only words.
+
+**Watermark.** Every film carries the creator's handle, set once with `film.sh brand "@handle"` (a film can override it with `src/brand.json`). It moves between the edges of the frame every 6 s, avoids words and the hero, becomes a signature for the last 2.5 s, and goes into the file's metadata. If `film.sh check` notes that no handle is set, tell the user in the delivery message; never invent a handle.
+
 **1. Scaffold.** `film.sh new <slug> "<Title>"` prints the folder.
 
 **1b. Reference (only when the user gives one: "in the style of <video or link>").** Run `film.sh reference <dir> <file|link>`. It measures the reference into `refs/`: frames every 0.5 s, a contact sheet, cuts and shot lengths, and the dominant palette. Look at `refs/sheet.jpg` and a few frames, then fill in `refs/style.md`. Take the **grammar** (palette roles, type, shot length, transitions, camera, motion feel, texture, how text enters and exits), **never the content**: no copied characters, logos, text or scenes. Set `src/head.js` from it. Both reviewers read `refs/style.md`.
@@ -56,8 +60,9 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
 **2b. Narration (default; skip only for "music only"): voice first, then the storyboard.**
 - Write `src/narration.json` with one or two lines per scene: `{voice, speed: 0.9, lang, lines: [{scene, text, delay?}]}`.
 - Writing rules:
+  - Narrate like a good university lecturer explaining to a smart colleague: full, connected sentences that carry the reasoning (because, so, which means). Avoid the AI tells: strings of short punchy fragments, stacked numbers, rhetorical questions answered in the next line, "here's the thing".
   - The voice explains and the on-screen words label. Never read the headline aloud word for word.
-  - Short sentences; "..." gives a breath.
+  - One idea per sentence; "..." gives a breath.
   - For ASMR, keep `speed` at 0.85–0.9 and use fewer, calmer lines.
   - Keep the same claims discipline as the brief: the narration explains causal transitions that are hard to see and adds no claim the model lacks (john-tuld parity).
 - Narration makes films longer: 45 s of pictures with a voice usually needs 80–90 beats (50–56 s). Set DUR = beats × BEAT exactly (the check prints the value).
@@ -122,6 +127,8 @@ Use `film.sh stills <dir> 12s,20s` to look closer. Don't render until the check 
 - **OFF-BEAT** (no strong onset near the cut): first make sure the scene starts on a beat where the drums hit (with `kick2`, the even beats; bar lines are safest). A scene starting between kicks leaves only its sfx to carry the cut. Otherwise the music around it is too thin. Keep a `kick2` (or a pluck and an sfx) going in the bars around that scene start, and put an EVENT exactly on the scene start.
 
 Then render again.
+
+**6b. Listen (narrated films; render runs it).** `film.sh listen <dir>` transcribes the finished film with local Whisper and compares it with the script: each line must be heard as written (≥ 80% match) and the captions must keep time with the voice. A mismatch usually means a word the voice mispronounces: respell it the way it should sound ("A D M", "eighty dollars"), run `film.sh voice`, and render again. The report is `voice/listen.md`.
 
 **7. Deliver.**
 - Write `README.md` in the film folder from `references/readme.template.md` (with narration, add the voice name and the lines).

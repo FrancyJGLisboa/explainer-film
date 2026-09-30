@@ -44,3 +44,6 @@ The packet may end with a critique log: every earlier round, with the maker's no
 
 ## Transition strips
 The packet also has strips of 5 frames 0.2 s apart around every cut and the opening. Check them for: a blank or unfinished first frame, a cut where the old scene and the new one collide or overlap text, text half off-frame while it moves, and a frozen moment. A problem visible only in a strip blocks like any other.
+
+## Watermark
+A small semi-transparent handle that moves between the frame edges, and a larger one at the end, is the creator's watermark. It is intended: do not block it, and do not count it as text over art or as a corner label.

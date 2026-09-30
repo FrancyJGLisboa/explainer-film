@@ -507,6 +507,27 @@ function captions(t) {
   ctx.restore();
   claimText('caption', x0 - pad, Z.y - h / 2, tw + pad * 2, h, TEXT, true);
 }
+// ---------- watermark: the creator's handle (film.sh brand @handle), inside the safe zone ----------
+// It moves between spots every 6 s (one crop can't remove it), skips any spot where words or the hero are,
+// and grows into a signature for the last 2.5 s. Off when no handle is set, or LOOK.watermark === false.
+function watermark(t) {
+  if (typeof BRAND === 'undefined' || !BRAND || !BRAND.handle || LOOK.watermark === false) return;
+  const S = SAFE, m = 18 * U, end = t > DUR - 2.5, size = (end ? 40 : 26) * U;
+  ctx.save(); ctx.font = SANS(size, 800); const w = ctx.measureText(BRAND.handle).width, h = size * 1.2;
+  const H0 = ZONE.hero, heroBox = H0 ? { x: H0.x - 300 * H0.s, y: H0.y - 460 * H0.s, w: 600 * H0.s, h: 520 * H0.s } : null;
+  const spots = end ? [[ZONE.caption.x - w / 2, ZONE.caption.y - h / 2], [ZONE.caption.x - w / 2, ZONE.caption.y - h * 2.2], [S.x1 - m - w, S.y1 - m - h]]
+    : (() => { const V = ZONE.visual, ys = [V.y + V.h * .08, V.y + V.h * .5, V.y + V.h * .88, S.y0 + m, S.y1 - m - h];   // sides of the visual first, corners last
+        return ys.flatMap((y, i) => [[S.x1 - m - w, y], [S.x0 + m, y]].map(p => [p[0], Math.min(S.y1 - m - h, Math.max(S.y0 + m, p[1]))])) })();
+  const hit = (x, y) => [...LAYOUT.filter(L => L.kind === 'text'), ...(heroBox ? [heroBox] : [])].some(L => x < L.x + L.w + m && x + w + m > L.x && y < L.y + L.h + m && y + h + m > L.y);
+  const k0 = end ? 0 : (Math.floor(t / 6) * 3) % spots.length; let at = null;   // jump to a different side and height every 6 s
+  for (let i = 0; i < spots.length && !at; i++) { const [x, y] = spots[(k0 + i) % spots.length]; if (!hit(x, y)) at = [x, y]; }
+  if (at && !HIDE_WORDS) {
+    ctx.globalAlpha = end ? .9 : .5; ctx.textBaseline = 'top'; ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillText(BRAND.handle, at[0] + 2 * U, at[1] + 2 * U);
+    ctx.fillStyle = TEXT; ctx.fillText(BRAND.handle, at[0], at[1]);
+  }
+  ctx.restore();
+  if (at) LAYOUT.push({ kind: 'mark', id: 'watermark', x: at[0], y: at[1], w, h });
+}
 function speaking(t) { return VO.some(v => t >= v.at && t <= v.to); }   // e.g. a character's mouth moves while this is true
 
 // ---------- frame ----------
@@ -521,6 +542,7 @@ function frameAt(frame) {
   if (LOOK.grain !== 0 && !HIDE_BACKDROP) grain(LOOK.grain ?? .06);
   words(t);
   captions(t);
+  watermark(t);
   window.LAYOUT = LAYOUT;
 }
 function finish() {                               // call once at the end of scenes.js
@@ -542,6 +564,8 @@ function finish() {                               // call once at the end of sce
   window.CUES = SHOTS.slice(1).map(s => s.from);
   window.SCENE_LIST = Object.entries(SC).filter(([k]) => k !== '_beats').map(([name, s]) => ({ name, from: s.from, to: s.to }));
   window.ZONE_VISUAL = ZONE.visual; window.SAFE = SAFE; window.PLATFORM_NAME = typeof PLATFORM === 'undefined' ? 'youtube' : PLATFORM;
+  window.BRAND_HANDLE = typeof BRAND !== 'undefined' && BRAND ? BRAND.handle : null;
+  window.CAPTION_WORDS = () => (VO.length && LOOK.captions !== false ? captionChunks().flatMap(c => c.words.map(o => ({ w: o.w, at: o.at, to: o.to }))) : []);
   window.CHECKS = CHECKS; window.getWords = () => [...WORD_LOG];
   window.setHideWords = v => { HIDE_WORDS = v; }; window.setHideBackdrop = v => { HIDE_BACKDROP = v; }; window.setHideHero = v => { HIDE_HERO = v; }; window.BG_HEX = BG;
   window.SCORE = ac => buildGroove(ac, { dur: DUR, bpm: BPM, sections: SECTIONS, events: EVENTS, ...MUSIC });

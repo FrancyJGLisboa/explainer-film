@@ -30,6 +30,9 @@ Read `plan-packet.md` in the current directory.
 - Tests: one real, computed test per key claim is enough. Don't demand simulations or checks of things the viewer can't see (per-pixel physics, exact citations for textbook facts marked common knowledge).
 - **Approve with conditions** when what remains are local corrections that don't change any scene's design (a number, a label, a test window, a colour swap): set `approved` true and list them in `required_fixes`; the film reviewer will check each one on screen.
 
+## Narration voice (a suggestion, not blocking)
+The narration should sound like a good university lecturer: full, connected sentences that carry the reasoning. If it reads as a string of short punchy fragments, stacked numbers, or a rhetorical question answered in the next line, suggest a rewrite of those lines.
+
 ## Verdict rules
 - **Blocking** problems are only the nine types above. Better ideas that are not required go in `suggestions`.
 - `approved` is true only if nothing blocks. Local corrections described under Proportion are conditions, not blocks: approve and list them. When unsure whether something is a design problem (blocks) or a local correction (condition), it blocks.

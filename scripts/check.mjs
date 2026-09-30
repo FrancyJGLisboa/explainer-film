@@ -88,7 +88,7 @@ const res = await page.evaluate(([EVERY, MINC]) => {
   out.allWords = window.getWords();
   out.words = out.allWords.filter(s => s.split(' ').length > 8);
   out.title = document.title; out.platform = window.PLATFORM_NAME; out.zone = window.ZONE_VISUAL || null;
-  out.checks = window.CHECKS;
+  out.checks = window.CHECKS; out.brand = window.BRAND_HANDLE;
   return out;
 }, [EVERY, +(process.env.MINC || 4.5)]);
 // the score must actually render: a thrown error here means a silent film
@@ -127,4 +127,5 @@ if (titleWords.length && !titleWords.some(w => screen.includes(w.slice(0, Math.m
 res.words.forEach(s => fails.push(`too long: "${s}" (${s.split(' ').length} words; max 8 per line)`));
 errors.forEach(e => fails.push(`page error: ${e}`));
 if (fails.length) { console.log(fails.join('\n')); console.log(`\n${fails.length} rule failure(s).`); process.exit(1); }
+if (!res.brand) console.log('note: no watermark. Run film.sh brand "@yourhandle" once so every film carries your handle.');
 console.log(`CLEAN: storyboard, claims, contrast (4.5:1), text over art, first frame, motion, corners, frame edges, headline length and frame fill (median ${(med * 100).toFixed(0)}%) all pass.`);

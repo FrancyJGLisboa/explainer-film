@@ -14,6 +14,9 @@ TITLE=$(sed -n 's#^// TITLE: ##p' "$F/src/head.js" | head -1)
   sed -n '37,262p' "$S"
   # narration timing; file names lose their extension so the page references no files
   if [ -f "$F/voice/timing.json" ]; then printf "const NARRATION = "; sed 's/\.wav"/"/' "$F/voice/timing.json"; echo ";"; else echo "const NARRATION = null;"; fi
+  # watermark: the film's own src/brand.json, else the user's ~/.config/explainer-film/brand.json (film.sh brand @handle)
+  B="$F/src/brand.json"; [ -f "$B" ] || B="$HOME/.config/explainer-film/brand.json"
+  if [ -f "$B" ]; then printf "const BRAND = "; cat "$B"; echo ";"; else echo "const BRAND = null;"; fi
   if [ -f "$F/src/tex.json" ]; then node "$(dirname "$0")/tex.mjs" "$F" >&2; printf "const TEXPATHS = "; cat "$F/tex/paths.json"; echo ";"; else echo "const TEXPATHS = null;"; fi
   cat "$K/kit.js" "$K/worlds.js" "$K/tex.js"
   cat "$F/src/scenes.js"

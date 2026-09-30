@@ -10,6 +10,9 @@
 #   film.sh plan <dir>             independent review of the plan (brief + narration) before any scene code
 #   film.sh review <dir>           independent review: a fresh reviewer (claude CLI, fixed prompt) judges stills of every scene; render needs its approval
 #   film.sh voice <dir>            narrate src/narration.json with Kokoro (free, local) -> voice/*.wav + beats each scene needs
+#   film.sh brand "@handle"        set the watermark for every film (off removes it)
+#   film.sh fetch <url> <dir>      an article or a video transcript from a link -> <dir>/source.md
+#   film.sh listen <dir>           speech recognition on the narrated film: lines heard as written, captions in time (render runs it)
 #   film.sh render <dir>           build + render <slug>.mp4 (+ .wav, cues) + sync/loudness check (+ voice mix if voice/ exists)
 set -e
 HERE=$(cd "$(dirname "$0")" && pwd); ROOT=$(dirname "$HERE")
@@ -126,6 +129,12 @@ PY
     h=$(hash16 "$d/piece.html")
     echo "reviewing $(ls "$d/qc/review"/*.jpg | wc -l | tr -d ' ') stills with an independent reviewer (about 1-3 min)..."
     LEDGER="$d/critique.md" LEDGER_KIND=film sh "$HERE/judge.sh" "$d/qc/review" "$ROOT/references/reviewer.md" packet.md "$V/$h.json" "$V/film_$slug" ;;
+  brand)
+    # the watermark on every film: film.sh brand "@handle" (film.sh brand off removes it)
+    C=$HOME/.config/explainer-film; mkdir -p "$C"
+    if [ "$1" = off ]; then rm -f "$C/brand.json"; echo "watermark off"; exit 0; fi
+    [ -n "$1" ] || { [ -f "$C/brand.json" ] && cat "$C/brand.json" || echo "no watermark set: film.sh brand \"@handle\""; exit 0; }
+    python3 -c "import json,sys; json.dump({'handle': sys.argv[1]}, open(sys.argv[2], 'w'))" "$1" "$C/brand.json" && echo "watermark: $1 (on every film from the next build)" ;;
   render)
     d=$(cd "$1" && pwd); slug=$(basename "$d")
     # hard gate: a film that fails its checks is not finished, so it does not render (a person can override with FORCE=1)
@@ -142,6 +151,34 @@ PY
       node "$HERE/narrate-plan.mjs" "$d/piece.html" > "$d/voice/plan.json"
       sh "$HERE/mix.sh" "$d" "$d/voice/plan.json"
     fi
-    sh "$HERE/export.sh" "$d" ;;
+    sh "$HERE/export.sh" "$d"
+    if [ -f "$d/voice/timing.json" ]; then   # narrated: check the finished film by ear
+      sh "$0" listen "$d" > "$d/voice/listen.log" 2>&1; st=$?
+      grep -E "^(- [0-7]?[0-9]%|  - |[0-9]+ words|LISTEN|  line|  captions)" "$d/voice/listen.log"; exit $st
+    fi ;;
+  listen)
+    # speech recognition on the finished narrated film: every line heard as written, captions in time with the voice
+    d=$(cd "$1" && pwd); T=$HOME/.cache/explainer-film/tts
+    "$T/.venv/bin/python" -c "import faster_whisper" 2>/dev/null || { echo "installing local speech recognition (faster-whisper, about 250 MB, once)..."; uv pip install -q --python "$T/.venv/bin/python" faster-whisper; }
+    (cd "$RUN" && node "$HERE/narrate-plan.mjs" "$d/piece.html" > "$d/voice/plan.json" && node "$HERE/narrate-plan.mjs" "$d/piece.html" --captions > "$d/voice/captions.json")
+    "$T/.venv/bin/python" "$HERE/listen.py" "$d" ;;
+  fetch)
+    # fetch <url> <dir>: an article or a video's transcript from a link, saved as <dir>/source.md (the input for the brief)
+    u=$1; d=$(cd "$2" && pwd); T=$HOME/.cache/explainer-film/tts
+    case "$u" in
+      *youtube.com/*|*youtu.be/*|*vimeo.com/*|*tiktok.com/*)
+        command -v yt-dlp >/dev/null || { echo "yt-dlp is needed for video links: brew install yt-dlp"; exit 1; }
+        tmp=$(mktemp -d); yt-dlp -q --skip-download --write-auto-subs --write-subs --sub-langs "en,en-US,en-GB,en-orig,pt,pt-BR,es,.*-orig" --sub-format vtt -o "$tmp/s.%(ext)s" "$u" 2>/dev/null || true
+        f=$(ls "$tmp"/*.vtt 2>/dev/null | head -1); [ -n "$f" ] || { echo "no transcript found for $u"; exit 1; }
+        { echo "# Source: $u (video transcript)"; echo; python3 "$HERE/vtt2text.py" "$f"; } > "$d/source.md" ;;
+      *)
+        "$T/.venv/bin/python" -c "import trafilatura" 2>/dev/null || { echo "installing the article reader (trafilatura, once)..."; uv pip install -q --python "$T/.venv/bin/python" trafilatura; }
+        "$T/.venv/bin/python" -c "
+import sys, trafilatura
+html = trafilatura.fetch_url(sys.argv[1]); text = html and trafilatura.extract(html, include_comments=False, include_tables=True, output_format='markdown')
+if not text: sys.exit('could not read an article at ' + sys.argv[1])
+open(sys.argv[2], 'w').write('# Source: ' + sys.argv[1] + '\n\n' + text + '\n')" "$u" "$d/source.md" || exit 1 ;;
+    esac
+    echo "saved $d/source.md ($(wc -w < "$d/source.md" | tr -d ' ') words): use it as the transcript for the brief" ;;
   *) sed -n '2,14p' "$0"; exit 1 ;;
 esac
