@@ -65,6 +65,18 @@ case "$cmd" in
     node "$HERE/check.mjs" "$d/piece.html" || s=1
     # claim tests must test something: a constant condition is a fake pass
     python3 "$HERE/lint.py" "$d/src/scenes.js" || s=1
+    # the executive takeaway (brief.md) must appear verbatim in a headline
+    python3 - "$d/brief.md" "$d/piece.html" <<'PY' || s=1
+import re, sys
+b = open(sys.argv[1]).read() if __import__('os').path.exists(sys.argv[1]) else ''
+m = re.search(r"\*\*Executive takeaway[^*\n]*\*\*:?[ \t]*(.+)", b)
+if not m or not m.group(1).strip() or m.group(1).strip().startswith('('): sys.exit(0)        # no model yet: the plan review will ask for one
+take = re.sub(r"[^a-z0-9 ]", "", m.group(1).lower()).split()
+page = re.sub(r"\{([^{}|]+)\|#[0-9a-fA-F]{3,8}\}", r"\1", open(sys.argv[2]).read())
+heads = [re.sub(r"[^a-z0-9 ]", "", re.sub(r"[*]", "", h).lower()).split() for h in re.findall(r"kine\(\s*['\"`](.+?)['\"`]\s*,", page)]
+if not any(h == take for h in heads):
+    print("takeaway: the brief's executive takeaway (\"" + m.group(1).strip() + "\") is not a headline in the film; show it verbatim in the last scene"); sys.exit(1)
+PY
     # zero assets: nothing loaded, nothing referenced (the upstream audit's verdict counts)
     node "$JA/asset-audit.mjs" "$d/piece.html" | grep -q "NOT zero-asset" && { echo "assets: the page references files; it must compute everything (run asset-audit.mjs for details)"; s=1; }
     # the scaffold is a demo about generic growth: a film must replace it, not re-label it
@@ -88,7 +100,7 @@ case "$cmd" in
   plan)
     # independent review of the PLAN (brief.md + narration) before any scene code; approval is keyed to this exact brief
     d=$(cd "$1" && pwd); slug=$(basename "$d"); V=$HOME/.cache/explainer-film/verdicts; W=$d/qc/plan; rm -rf "$W"; mkdir -p "$W"
-    grep -q "^\*\*Core idea[^:]*:\*\* *[^ ]" "$d/brief.md" 2>/dev/null || { echo "REFUSED: fill in brief.md first (core idea, kit plan, reality map with tests, claims, beats)."; exit 1; }
+    grep -qE "\*\*Core (idea|finding)[^*]*\*\*:? *[A-Za-z0-9]" "$d/brief.md" 2>/dev/null || { echo "REFUSED: fill in brief.md first (the model's core finding, kit plan, reality map with tests, claims, beats)."; exit 1; }
     { echo "# Plan packet: $(sed -n 's#^// TITLE: ##p' "$d/src/head.js")"; echo; cat "$d/brief.md"
       [ -f "$d/src/narration.json" ] && { printf '\n## Narration (src/narration.json)\n\n```json\n'; cat "$d/src/narration.json"; printf '\n```\n'; }
       [ -f "$d/refs/style.md" ] && { printf '\n## Reference style (refs/style.md)\n\n'; cat "$d/refs/style.md"; }

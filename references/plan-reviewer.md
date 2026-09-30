@@ -21,7 +21,9 @@ Read `plan-packet.md` in the current directory.
 5. **Unsourced facts.** A number or factual claim on screen has no source and is not marked illustrative.
 6. **Nothing big to look at.** A scene has no single main visual that would fill the right two thirds of the frame, or
    relies on text to carry the idea.
-7. **No arc.** The scenes don't go hook → mechanism → insight/result → limits (or an equally clear structure).
+7. **No arc.** The scenes don't go finding → mechanism → example → boundary → takeaway (or an equally clear structure).
+8. **Model gaps (john-tuld).** The brief's model lacks a core finding, a causal sequence with direction, a boundary or falsifier, an executive takeaway of at most 8 words, or an intentionally-omitted list; or the first scene opens with a teaser question instead of stating the finding; or no scene shows the boundary; or the last scene doesn't carry the takeaway.
+9. **Parity.** A headline or narration line adds a claim the model and claims table don't contain, reverses a causal arrow, or presents the explanation as a named person's (or John Tuld's) own words.
 
 ## Proportion (this is a 15-60 s social video, not a paper)
 - Block what would **mislead or confuse a viewer**: a wrong ratio, order or mechanism on screen, a label that contradicts the picture, a colour that means two things.
@@ -29,7 +31,7 @@ Read `plan-packet.md` in the current directory.
 - **Approve with conditions** when what remains are local corrections that don't change any scene's design (a number, a label, a test window, a colour swap): set `approved` true and list them in `required_fixes`; the film reviewer will check each one on screen.
 
 ## Verdict rules
-- **Blocking** problems are only the seven types above. Better ideas that are not required go in `suggestions`.
+- **Blocking** problems are only the nine types above. Better ideas that are not required go in `suggestions`.
 - `approved` is true only if nothing blocks. Local corrections described under Proportion are conditions, not blocks: approve and list them. When unsure whether something is a design problem (blocks) or a local correction (condition), it blocks.
 - Each problem names the scene (or the brief section), says what is wrong in one sentence, and gives one concrete fix:
   what the picture should show instead. No vague advice.

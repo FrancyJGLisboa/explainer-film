@@ -2,13 +2,27 @@
 
 **Input** (hunch or transcript, verbatim or a pointer):
 
-**Core idea** (one sentence a high-schooler would repeat):
+**Audience:** (who receives this; default: busy professionals who don't work in the topic. The film explains TO them, in the analyst's voice; it is never presented as a named person's words.)
 
-**Audience / format:** general, 45 s, 16:9, English, music only
+**Format:** platform, length, narrated + captions (default) or music only
+
+## Model (the john-tuld shared representation contract: one validated model, the film is a projection of it)
+- **Core finding** (one sentence; the film's first scene states it, not a teaser question):
+- **Causal sequence** (A changes B because C; this produces D unless E):
+- **Crucial distinctions** (the ones that change predictions or actions):
+- **Concrete example** (a case with a start, a transition and a result):
+- **Boundary or falsifier** (when the model breaks, or what evidence would overturn it; gets its own scene):
+- **Hero transformation** (the one on-screen transformation that best teaches the mechanism):
+- **Executive takeaway:** (one sentence, at most 8 words, that a viewer can repeat accurately; the last scene shows it verbatim)
+- **Forbidden misinterpretations** (readings the picture must not allow):
+- **Intentionally omitted** (what the film leaves out, stated briefly on screen or in the narration):
+
+Before going on, check the model against john-tuld's analytical gates G1–G9 (mechanism identified, distinctions kept, truth status separated, uncertainty preserved, causal chain coherent, compression faithful, concrete test passed, limits exposed). If the john-tuld skill is installed, its `references/gates.md` has the full wording.
 
 ## Kit plan (decide before coding; see SKILL.md step 3–4)
 - World (landscape / space / city / ocean / micro / none, and why it is this topic's real setting):
 - Hero (blob / robot), its colour (not any entity's colour) and its mood arc:
+- Colour plan (one colour per entity or quantity, all scenes):
 - Counts or shares shown as a crowd:
 - Equations for tex / texMorph:
 - Narration (voice) or music only:
@@ -18,12 +32,12 @@
 |---|---|---|---|
 |  |  |  |  |
 
-## Claims on screen
+## Claims on screen and in the narration
 | claim | source | status |
 |---|---|---|
-|  |  | sourced / common knowledge / illustrative / DROPPED |
+|  |  | sourced / source's own claim / common knowledge / inference / illustrative / DROPPED |
 
-## Beats (72 beats = 45 s at 96 bpm; 6-8 scenes)
-| # | beats | picture | words (≤ 8 per line) | sound |
+## Beats (6-8 scenes; arc: finding → mechanism, step by step → example → boundary → takeaway)
+| # | beats | picture | words (≤ 8 per line) | narration |
 |---|---|---|---|---|
 | 1 | 0–6 |  |  |  |

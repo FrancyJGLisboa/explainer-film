@@ -18,6 +18,7 @@ Read `packet.md` in the review folder first, then look at **every** still it lis
 7. **Looks cheap.** It clearly falls short of a clean Kurzgesagt / 3Blue1Brown standard: cramped, lopsided, most of the frame empty, text parked at the very edge to dodge the art.
 
 ## Judge the whole film too
+- **Model parity (john-tuld):** the first scene states the brief's core finding; one scene shows the boundary (when the mechanism breaks); the last scene carries the executive takeaway; narration and captions add no claim beyond the brief's model and claims table.
 - If the packet includes **plan conditions** (required fixes the plan was approved with), check each one on screen; an unmet condition blocks the scene it belongs to.
 - If the packet has a reference style, does the film follow its grammar (palette roles, pacing, transitions, text motion) without copying its content?
 - Does the sequence teach the brief's core idea to a curious high-schooler? Is there a clear arc (hook → mechanism → insight → limits)?

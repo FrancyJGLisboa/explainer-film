@@ -1,6 +1,6 @@
 ---
 name: explainer-film
-description: Turn a hunch about a topic, or a pasted transcript/article, into a finished animated explainer MP4 for any platform (TikTok, Reels, Shorts, Instagram, LinkedIn, YouTube, X; right size and safe zones; default 45 s 16:9, music only; optional free local narration, including a soft ASMR voice) in a Kurzgesagt x 3Blue1Brown style whose pictures keep the structure of the real thing, so viewers can reason with them. Use when someone says "make an explainer/animation/video about X", "explain X visually", "animate this transcript/text/article", "turn this into a motion-graphics video", or gives a one-line hunch and wants it animated. Plain natural language is enough; no config. NOT for B-roll over an existing talking-head video (use motion-broll) or product ads (product-video pipeline).
+description: Turn a hunch about a topic, or a pasted transcript/article, into a finished animated explainer MP4 for any platform (TikTok, Reels, Shorts, Instagram, LinkedIn, YouTube, X; right size and safe zones; narrated with captions by default, free local voices including a soft ASMR one, or music only), built from one validated model in the john-tuld way (finding first, mechanism, boundary, repeatable takeaway) in a Kurzgesagt x 3Blue1Brown style whose pictures keep the structure of the real thing, so viewers can reason with them. Use when someone says "make an explainer/animation/video about X", "explain X visually", "animate this transcript/text/article", "turn this into a motion-graphics video", or gives a one-line hunch and wants it animated. Plain natural language is enough; no config. NOT for B-roll over an existing talking-head video (use motion-broll) or product ads (product-video pipeline).
 ---
 
 # explainer-film
@@ -18,8 +18,8 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
   Pass it to `film.sh new <slug> "<Title>" <platform>`: it sets the canvas and the **safe zone** (clear of the app's own buttons and captions).
   Lay everything out from `ZONE` (head, visual, hero, caption) and `SAFE`, never from fixed pixels, so the film fits its platform;
   `film.sh check` fails words that fall outside the safe zone. For several platforms, make one film per platform.
-- 45 s, 60 fps, music only (no narrator), in the language of the input.
-- Narration only when the user's words ask for it ("narrated", "with a voice", "voice-over", "ASMR"). Voice choice:
+- 45 s of pictures, 60 fps, in the language of the input. **Narrated with burned-in captions by default** (muted viewers read, others listen); "music only" / "no voice" turns narration off. With narration, films usually run 50–60 s.
+- The narrator is the **analyst's voice** explaining to the viewer: never a named person, never the source's speaker impersonated, and never John Tuld (he is the audience model). Voice choice:
   - "ASMR" / "whisper" / "calm" → `af_nicole`
   - otherwise `af_heart`
   - British → `bf_emma`
@@ -41,21 +41,25 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
 
 **1b. Reference (only when the user gives one: "in the style of <video or link>").** Run `film.sh reference <dir> <file|link>`. It measures the reference into `refs/`: frames every 0.5 s, a contact sheet, cuts and shot lengths, and the dominant palette. Look at `refs/sheet.jpg` and a few frames, then fill in `refs/style.md`. Take the **grammar** (palette roles, type, shot length, transitions, camera, motion feel, texture, how text enters and exits), **never the content**: no copied characters, logos, text or scenes. Set `src/head.js` from it. Both reviewers read `refs/style.md`.
 
-**2. Brief (`brief.md`).** Fill in the template (`kit/brief.example.md` is a filled one, for the demo film):
-- **Core idea:** one sentence.
+**2. Model, then brief (`brief.md`).** The brief opens with the **model**: john-tuld's shared representation contract (core finding, causal sequence, crucial distinctions, concrete example, boundary or falsifier, hero transformation, executive takeaway, forbidden misinterpretations, intentionally omitted). The film is a projection of that one model; no scene, headline or narration line may add a claim the model lacks. Check the model against john-tuld's gates G1–G9 before writing beats (if `~/.claude/skills/john-tuld` exists, read its `references/gates.md` and `references/representation-protocol.md`). Then fill the rest of the template (`kit/brief.example.md` is a filled one, for the demo film):
+- **Arc:** finding → mechanism, step by step → a concrete example → the boundary (when it breaks) → the takeaway.
+  - The first scene **states the core finding**, not a teaser question.
+  - The boundary gets its own scene.
+  - The last scene shows the **executive takeaway verbatim** (≤ 8 words; `film.sh check` looks for it).
+  - The intentionally omitted items are stated briefly on screen or in the narration.
 - **Hunch:** research the mechanism first. If facts or numbers matter, use web search, and prefer primary sources.
 - **Transcript:** condense to its 1 core idea and 6–8 beats. Keep the speaker's claims and add none of your own.
 - **Reality map:** for every picture, record the real thing → what's on screen → what stays true → **test** (`references/style.md`). A picture with no "what stays true" gets cut. The test is a check the code can run on the numbers it draws, like "ends ≥ 5× steeper than it starts" (`bend`) or "each row doubles". It becomes a `shows(...)` line in scenes.js.
 - **Claims table:** every number or factual claim on screen gets a source. Anything unsourced becomes "illustrative" (listed as such in the README) or is DROPPED. Never put a refuted or unsourced number on screen as fact.
-- **Beats table:** 72 beats (for 45 s), 6–8 scenes, at most 8 words per line. Arc: hook → the naive picture → the mechanism, step by step → the surprise or insight → the limits (what it isn't) → a loop or recap.
+- **Beats table:** 6–8 scenes, at most 8 words per line, with the narration line per scene.
 
-**2b. Narration (only if asked): voice first, then the storyboard.**
+**2b. Narration (default; skip only for "music only"): voice first, then the storyboard.**
 - Write `src/narration.json` with one or two lines per scene: `{voice, speed: 0.9, lang, lines: [{scene, text, delay?}]}`.
 - Writing rules:
   - The voice explains and the on-screen words label. Never read the headline aloud word for word.
   - Short sentences; "..." gives a breath.
   - For ASMR, keep `speed` at 0.85–0.9 and use fewer, calmer lines.
-  - Keep the same claims discipline as the brief.
+  - Keep the same claims discipline as the brief: the narration explains causal transitions that are hard to see and adds no claim the model lacks (john-tuld parity).
 - Narration makes films longer: 45 s of pictures with a voice usually needs 80–90 beats (50–56 s). Set DUR = beats × BEAT exactly (the check prints the value).
 - Run `film.sh voice <dir>`. The first use installs Kokoro (about 350 MB, once). It prints the beats each scene needs; set the `SC` beats to at least that, and set DUR to beats × BEAT.
 - Narrated films get **burned-in captions automatically** (most social video is watched muted): 3–4 words at a time in `ZONE.caption`, the current word highlighted. Set `LOOK.captions = false` only if the user asks for no captions.
@@ -111,7 +115,7 @@ Use `film.sh stills <dir> 12s,20s` to look closer. Don't render until the check 
 
 **6. Render.** `film.sh render <dir>`, about 2.5 min. Cues are the scene starts (SHOTS). If sync-check reports:
 - **STARTLE** (loudness jump > 6 dB): bring the music layers in more gradually around that cut (1–2 new layers per bar, never kick and bass together) or use a softer sfx.
-- **OFF-BEAT** (no strong onset near the cut): the music around it is too thin. Keep a `kick2` (or a pluck and an sfx) going in the bars around that scene start, and put an EVENT exactly on the scene start.
+- **OFF-BEAT** (no strong onset near the cut): first make sure the scene starts on a beat where the drums hit (with `kick2`, the even beats; bar lines are safest). A scene starting between kicks leaves only its sfx to carry the cut. Otherwise the music around it is too thin. Keep a `kick2` (or a pluck and an sfx) going in the bars around that scene start, and put an EVENT exactly on the scene start.
 
 Then render again.
 
@@ -129,6 +133,6 @@ Then render again.
 - **A film is not done while any check fails.** `film.sh render` refuses to run until `film.sh check` passes. Never set FORCE=1 yourself (it is for a person), and never report a film as finished with failures.
 - The hero's colour is not any entity's colour: if red means "virus" or "wrong", the hero is not red.
 - Don't ask the user questions unless the input is empty. Pick sensible defaults and state them at the end.
-- No voice-over unless the user asks for one.
+- Narration is on by default (analyst voice + captions); "music only" turns it off.
 - No brand names or logos of real companies on screen unless the input is about them.
 - Keep scripts, kit and references generic; film-specific code lives only in the film folder.
