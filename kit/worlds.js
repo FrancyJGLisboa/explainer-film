@@ -84,8 +84,8 @@ const WORLD = {
   },
   landscape(t, cam, o = {}) {                      // dusk hills: flat sky bands, sun, clouds, three ridges
     const { sky = [mixHex(BG, AIR, .06), mixHex(BG, AIR, .13), mixHex(BG, AIR, .2)], sunCol = HERO, hills = [mixHex(BG, AIR, .1), mixHex(BG, NIGHTFALL, .3), mixHex(BG, NIGHTFALL, .55)] } = o;
-    parallax(cam, 0, () => { bandsFill(-H, sky, H * .55); starsLayer(t, 60, 8); sunDisc(W * .9, H * .6, 60, sunCol, t); });
-    parallax(cam, .1, () => cloudsLayer(t, 5, H * .28, 'rgba(245,240,230,.07)', 5, 6));
+    parallax(cam, 0, () => { bandsFill(-H, sky, H * .55); starsLayer(t, 60, 8); if (sunCol) sunDisc(W * .9, H * .6, 60, sunCol, t); });   // sunCol: null = no sun (when it would sit behind the explanation)
+    if (o.clouds !== false) parallax(cam, .1, () => cloudsLayer(t, 5, H * .28, 'rgba(245,240,230,.07)', 5, 6));   // clouds: false when they sit behind panels
     parallax(cam, .25, () => ridge(1, H * .72, 160, hills[0]));
     parallax(cam, .5, () => ridge(2, H * .84, 120, hills[1], { freq: .003 }));
     parallax(cam, .8, () => ridge(3, H * .95, 70, hills[2], { freq: .004 }));
@@ -99,7 +99,7 @@ const WORLD = {
   },
   ocean(t, cam, o = {}) {
     const { moon = TEXT } = o;
-    parallax(cam, 0, () => { starsLayer(t, 90, 21); sunDisc(W * .7, H * .25, 50, moon, 0); });
+    parallax(cam, 0, () => { starsLayer(t, 90, 21); if (moon) sunDisc(W * .7, H * .25, 50, moon, 0); });   // moon: null = none
     parallax(cam, .2, () => wavesLayer(t, H * .72, mixHex(BG, AIR, .14), 10, .5, 1));
     parallax(cam, .45, () => wavesLayer(t, H * .82, mixHex(BG, AIR, .06), 16, .7, 2));
     parallax(cam, .8, () => wavesLayer(t, H * .92, mixHex(BG, NIGHTFALL, .35), 22, .9, 3));

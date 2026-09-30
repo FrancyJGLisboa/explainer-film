@@ -37,7 +37,7 @@ Music layers: pad, pluck, hat8, kick2, kick4, bassHalf, clap. Harmonies: bright,
 ## Worlds (backdrops; define `backdrop(t, cam)` in scenes.js)
 | call | notes |
 |---|---|
-| `WORLD.landscape / space / city / ocean / micro(t, cam, o?)` | ready-made environments with parallax depth. `o` overrides colours (e.g. `{sunCol}`, `{planetCol}`, `{cellCol}`) |
+| `WORLD.landscape / space / city / ocean / micro(t, cam, o?)` | ready-made environments with parallax depth. `o` overrides colours (e.g. `{sunCol}`, `{planetCol}`, `{cellCol}`); `{sunCol: null}` / `{moon: null}` remove the sun or moon when they would sit behind your charts |
 | `parallax(cam, depth, fn)` | draw your own layer: depth 0 is fixed, 1 moves with the world |
 | `ridge`, `sunDisc`, `cloudsLayer`, `starsLayer`, `planet`, `skylineLayer`, `wavesLayer`, `membrane` | building blocks for custom worlds |
 | `mixHex(a, b, k)`, `AIR`, `NIGHTFALL` | lighten toward blue air or darken toward night (never toward grey) |
