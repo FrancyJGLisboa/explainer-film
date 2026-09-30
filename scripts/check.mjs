@@ -33,7 +33,7 @@ const res = await page.evaluate(([EVERY, MINC]) => {
   const c = document.querySelector('canvas'), x = c.getContext('2d'), W = c.width, H = c.height;
   const lum = (r, g, b) => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }; return .2126 * f(r) + .7152 * f(g) + .0722 * f(b); };
   const hex = h => { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); };
-  const out = { cast: {}, castMax: [0, 0], castBig: {}, dupItems: {}, motion: [], low: {}, corner: {}, off: {}, over: {}, fill: [], unsafe: {} };
+  const out = { guides: {}, cast: {}, castMax: [0, 0], castBig: {}, dupItems: {}, motion: [], low: {}, corner: {}, off: {}, over: {}, fill: [], unsafe: {} };
   const S = window.SAFE || { x0: 0, y0: 0, x1: W, y1: H };
   const BGC = hex(window.BG_HEX || '#000000'), dist = (d, i) => Math.abs(d[i] - BGC[0]) + Math.abs(d[i + 1] - BGC[1]) + Math.abs(d[i + 2] - BGC[2]),
         isInk = (d, i) => dist(d, i) > 45, isArt = (d, i) => dist(d, i) > 90;   // faint grids count as fill, not as art under text
@@ -54,7 +54,8 @@ const res = await page.evaluate(([EVERY, MINC]) => {
       for (let y = 0; y < H; y += 3) for (let xx = 0; xx < W; xx += 3) if (isArt(d, (y * W + xx) * 4)) occ.add(Math.floor(y / CELL) * 1000 + Math.floor(xx / CELL));
       let bx0 = 1e9, by0 = 1e9, bx1 = -1, by1 = -1; for (const k of occ) { const cy = Math.floor(k / 1000), cx = k % 1000; bx0 = Math.min(bx0, cx); bx1 = Math.max(bx1, cx); by0 = Math.min(by0, cy); by1 = Math.max(by1, cy); }
       out.fill.push([+t.toFixed(2), occ.size / (Math.ceil(W / CELL) * Math.ceil(H / CELL)), bx1 < 0 ? null : [bx0 * CELL, by0 * CELL, (bx1 + 1) * CELL, (by1 + 1) * CELL]]); }
-    { const acts = (window.LAYOUT || []).filter(L => L.kind === 'actor' && L.id !== 'wisp'), seen = {};                   // cast on screen, and items drawn twice
+    { const acts = (window.LAYOUT || []).filter(L => L.kind === 'actor' && !L.guide), seen = {};                   // cast on screen, and items drawn twice
+      (window.LAYOUT || []).filter(L => L.kind === 'actor' && L.guide).forEach(L => { out.guides[L.id] = 1; });
       acts.forEach(A => { out.cast[A.id] = A.col; if (A.s > 1.3) (out.castBig[A.id] ||= []).push(t.toFixed(2)); });
       if (acts.length > out.castMax[0]) out.castMax = [acts.length, +t.toFixed(2)];
       (window.LAYOUT || []).filter(L => L.kind === 'item').forEach(L => { if (seen[L.id]) (out.dupItems[L.id] ||= []).push(t.toFixed(2)); seen[L.id] = 1; }); }
@@ -107,7 +108,7 @@ await browser.close();
 const span = ts => ts.length > 1 ? `${ts[0]}-${ts[ts.length - 1]}s` : `${ts[0]}s`;
 const fails = [];
 // cast: every character must stand for a real actor in the brief's Cast table; few at once; not a quantity's colour; not blown up
-{ const film = dirname(resolve(file)), names = Object.keys(res.cast).filter(n => n !== 'wisp');
+{ const film = dirname(resolve(file)), names = Object.keys(res.cast).filter(n => !res.guides[n]);
   const brief = existsSync(join(film, 'brief.md')) ? readFileSync(join(film, 'brief.md'), 'utf8') : '', sec = brief.split(/^## Cast/m)[1] || '';
   const listed = new Set([...sec.split(/^## /m)[0].matchAll(/^\|\s*\**([A-Za-z]+)/gm)].map(m => m[1].toLowerCase()).filter(w => !['character', 'name'].includes(w)));
   names.filter(n => !listed.has(n)).forEach(n => fails.push(`cast: "${n}" is on screen but not in brief.md's "## Cast" table (character | plays | the real actor it stands for). A character that stands for nothing is decoration: cut it or add the row`));

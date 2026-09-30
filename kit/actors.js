@@ -6,6 +6,7 @@
 // registerActor(); build.sh loads it from ~/.config/explainer-film/cast/cast.js when present.
 // Conservation (film.sh check): the same item (same description, or same `id`) drawn twice in one frame fails: chain verbs with
 // { after: false } on the first and { before: false } on the next. Two genuinely different identical items need different ids.
+// A guide dot (a travelling thread with a face) pushes { kind: 'actor', guide: true }: it needs no Cast row and does not count toward the 3.
 // Rules (film.sh check): every character drawn must be listed in the brief's "## Cast" table (character -> the
 // real actor it stands for); at most 3 characters on screen at once; a character's colour may not match a
 // VAR colour (colours mean quantities); scale at most 1.3 (the explanation, not the cast, fills the frame).
