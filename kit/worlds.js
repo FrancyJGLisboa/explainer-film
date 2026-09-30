@@ -104,6 +104,36 @@ const WORLD = {
     parallax(cam, .45, () => wavesLayer(t, H * .82, mixHex(BG, AIR, .06), 16, .7, 2));
     parallax(cam, .8, () => wavesLayer(t, H * .92, mixHex(BG, NIGHTFALL, .35), 22, .9, 3));
   },
+  paper(t, cam, o = {}) {                          // paper style: fibres, a soft vignette, faint ruled lines
+    parallax(cam, 0, () => {
+      ctx.save(); ctx.strokeStyle = mixHex(BG, TEXT, .06); ctx.lineWidth = 2; for (let y = H * .12; y < H; y += 64 * U) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); } ctx.restore();
+      for (let i = 0; i < 140; i++) { const x = hash2(i, 31) * W, y = hash2(i, 32) * H, l = 6 + hash2(i, 33) * 18, a = hash2(i, 34) * 6.28; strokeLine([[x, y], [x + Math.cos(a) * l, y + Math.sin(a) * l]], mixHex(BG, TEXT, .08), 1.5); }
+      const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .35, W / 2, H / 2, Math.max(W, H) * .75); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(90,60,20,.12)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    });
+  },
+  board(t, cam, o = {}) {                          // chalkboard style: old erased chalk smudges, a dusty ledge
+    parallax(cam, 0, () => {
+      ctx.save(); ctx.filter = 'blur(18px)'; for (let i = 0; i < 9; i++) ell(hash2(i, 41) * W, hash2(i, 42) * H, 120 + hash2(i, 43) * 260, 30 + hash2(i, 44) * 50, hash2(i, 45) * 3, 'rgba(240,240,230,.035)'); ctx.restore();
+      ctx.fillStyle = mixHex(BG, '#000000', .35); ctx.fillRect(0, H - 22 * U, W, 22 * U);
+      for (let i = 0; i < 60; i++) circ(hash2(i, 46) * W, H - 26 * U - hash2(i, 47) * 8 * U, 1 + hash2(i, 48) * 2, 'rgba(240,240,230,.18)');
+    });
+  },
+  studio(t, cam, o = {}) {                         // newsroom style: a quiet grid, a lit top band, a thin rule
+    parallax(cam, 0, () => {
+      ctx.save(); ctx.strokeStyle = mixHex(BG, TEXT, .05); ctx.lineWidth = 1.5; for (let x = 0; x < W; x += 80 * U) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); } for (let y = 0; y < H; y += 80 * U) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); } ctx.restore();
+      ctx.fillStyle = mixHex(BG, TEXT, .04); ctx.fillRect(0, 0, W, SAFE.y0 + 8 * U);
+      ctx.fillStyle = o.rule || WRONG; ctx.fillRect(0, SAFE.y0 + 8 * U, W * (.3 + .7 * clamp(t / 1.2)), 4 * U);
+    });
+  },
+  grid(t, cam, o = {}) {                           // neon style: a perspective floor grid under a dark sky
+    const col = o.col || VAR.purple;
+    parallax(cam, 0, () => {
+      const hy = H * .7; ctx.save(); ctx.globalAlpha = .22; ctx.strokeStyle = col; ctx.lineWidth = 2;
+      for (let i = -12; i <= 12; i++) { ctx.beginPath(); ctx.moveTo(W / 2 + i * 40 * U, hy); ctx.lineTo(W / 2 + i * 260 * U, H); ctx.stroke(); }
+      for (let k = 0; k < 10; k++) { const y = hy + (H - hy) * Math.pow(((k + t * .4) % 10) / 10, 2); ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+      ctx.restore(); starsLayer(t, 70, 51);
+    });
+  },
   micro(t, cam, o = {}) {                          // microscopic: drifting cells at three depths, soft focus behind
     const { cellCol = mixHex(BG, AIR, .18), nucleus = mixHex(BG, AIR, .38) } = o;   // neutral nuclei: red is reserved for what the film calls dangerous
     parallax(cam, .1, () => { ctx.save(); ctx.filter = 'blur(6px)'; for (let i = 0; i < 9; i++) membrane(hash2(i, 1) * W, (hash2(i, 2) * H + t * 6) % (H + 200) - 100, 60 + hash2(i, 3) * 90, shade(cellCol, .8), t, i); ctx.restore(); });

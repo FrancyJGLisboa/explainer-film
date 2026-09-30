@@ -3,9 +3,10 @@
 // and before the film's scenes.js. Everything is a pure function of t: no Math.random, no Date.
 
 // ---------- fonts ----------
-const SANS = (s, w = 800) => `${w} ${s}px "Avenir Next", "Helvetica Neue", Arial, sans-serif`;
+// a style pack (kit/styles/*.js) can set LOOK.sans / LOOK.mono; LOOK.sansWeight caps the weight for fonts that only have one
+const SANS = (s, w = 800) => `${LOOK.sansWeight ? Math.min(w, LOOK.sansWeight) : w} ${s}px ${LOOK.sans || '"Avenir Next", "Helvetica Neue", Arial, sans-serif'}`;
 const MATH = (s, italic = true) => `${italic ? 'italic ' : ''}400 ${s}px "STIX Two Text", "STIXGeneral", "Times New Roman", serif`;
-const MONO = (s, w = 600) => `${w} ${s}px Menlo, ui-monospace, monospace`;
+const MONO = (s, w = 600) => `${w} ${s}px ${LOOK.mono || 'Menlo, ui-monospace, monospace'}`;
 
 // ---------- platforms: canvas, safe zone, and where things go ----------
 // Safe zones keep words and key visuals clear of each app's own buttons, captions and progress bars.
@@ -113,11 +114,28 @@ function kine(str, x, y, t, at, out, o = {}) {
   ctx.beginPath(); ctx.rect(x0 - 30, y - size * 1.1, total + 60, size * 1.45); ctx.clip();
   toks.forEach((k, i) => {
     const pin = back(prog(t, at + i * stagger, at + i * stagger + .5)), pout = ease(prog(t, out + i * stagger * .6, out + i * stagger * .6 + .4));
-    if (!HIDE_WORDS) { ctx.fillStyle = k.c; ctx.fillText(k.s, x0, y + (1 - pin) * size * 1.3 - pout * size * 1.4); }
+    if (!HIDE_WORDS) textIn(k, x0, y, ws[i], size, pin, pout, prog(t, at + i * stagger, at + i * stagger + .5));
     x0 += ws[i] + sp;
   });
   ctx.restore();
   if (t > at + .3 && t < out) claimText(id, left, y - size * .95, total, size * 1.2, col);
+}
+// how a headline word enters and leaves (the style's LOOK.textIn). raw = linear 0..1 progress of the entrance.
+function textIn(k, x, y, w, size, pin, pout, raw) {
+  const mode = LOOK.textIn || 'slide';
+  if (mode === 'slide') { ctx.fillStyle = k.c; ctx.fillText(k.s, x, y + (1 - pin) * size * 1.3 - pout * size * 1.4); return; }
+  ctx.save(); ctx.globalAlpha *= 1 - pout;
+  if (mode === 'type') {                               // typewriter: letters appear one by one
+    const n = Math.floor(k.s.length * clamp(raw * 1.15)); ctx.fillStyle = k.c; ctx.fillText(k.s.slice(0, n), x, y);
+  } else if (mode === 'write') {                       // chalk / pen: the word is revealed left to right, as if written
+    const e = easeOut(clamp(raw)); ctx.beginPath(); ctx.rect(x - 4, y - size * 1.1, (w + 8) * e, size * 1.5); ctx.clip();
+    ctx.fillStyle = k.c; ctx.fillText(k.s, x, y);
+  } else if (mode === 'wipe') {                        // broadcast: a bar sweeps across and leaves the word behind
+    const e = ease(clamp(raw * 3.5)), bar = LOOK.wipeCol || THREAD, bx = x - 6 + (w + 12) * Math.min(1, e * 1.25);   // fast per word, so the bar reads as one sweep along the line
+    ctx.save(); ctx.beginPath(); ctx.rect(x - 6, y - size * 1.1, Math.max(0, bx - (x - 6)), size * 1.5); ctx.clip(); ctx.fillStyle = k.c; ctx.fillText(k.s, x, y); ctx.restore();
+    if (e > 0 && e < .8) { const bw = size * .22; ctx.fillStyle = bar; ctx.fillRect(Math.min(bx, x + w + 6) - bw, y - size * .95, bw, size * 1.2); }
+  }
+  ctx.restore();
 }
 function pill(str, x, y, p, o = {}) {             // small label on its own background; springs open from its centre
   if (p <= 0) return;
@@ -127,7 +145,7 @@ function pill(str, x, y, p, o = {}) {             // small label on its own back
   if (mk && fg == null) fg = mk[2];
   const lumOf = c => { const [r, g2, b3] = rgbOf(hexOf2(c)).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * r + .7152 * g2 + .0722 * b3; };
   const ratio = (a, c) => { const x = lumOf(a), y2 = lumOf(c); return (Math.max(x, y2) + .05) / (Math.min(x, y2) + .05); };
-  if (fg == null || ratio(fg, bg) < 4.5) fg = ratio(TEXT, bg) >= ratio(DEEP, bg) ? TEXT : DEEP;   // always readable on its own box
+  if (fg == null || ratio(fg, bg) < 4.5) fg = [TEXT, DEEP, '#ffffff', '#111111'].reduce((a, c) => ratio(c, bg) > ratio(a, bg) ? c : a);   // always readable on its own box, light or dark style
   ctx.save(); ctx.font = font; const w = ctx.measureText(str).width + size * 1.4, h = size * 1.8;
   const x0 = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
   ctx.translate(x0 + w / 2, y); ctx.scale(back(p), back(p));
@@ -501,11 +519,11 @@ function captions(t) {
   const k = Math.min(1, Z.w / total); if (k < 1) { ctx.font = SANS(size * k, 800); }
   const tw = total * k, x0 = Z.x - tw / 2, pad = 18 * U, h = size * k * 1.5;
   if (!HIDE_WORDS) {
-    ctx.fillStyle = 'rgba(8,12,26,.72)'; ctx.beginPath(); ctx.roundRect(x0 - pad, Z.y - h / 2, tw + pad * 2, h, h / 2); ctx.fill();
-    let x = x0; c.words.forEach((o, i) => { ctx.fillStyle = t >= o.at && t < o.to ? VAR.yellow : TEXT; ctx.fillText(o.w, x, Z.y + 2); x += (ws[i] + sp) * k; });
+    ctx.fillStyle = LOOK.captionBg || 'rgba(8,12,26,.72)'; ctx.beginPath(); ctx.roundRect(x0 - pad, Z.y - h / 2, tw + pad * 2, h, h / 2); ctx.fill();
+    let x = x0; c.words.forEach((o, i) => { ctx.fillStyle = t >= o.at && t < o.to ? (LOOK.captionHi || VAR.yellow) : (LOOK.captionFg || TEXT); ctx.fillText(o.w, x, Z.y + 2); x += (ws[i] + sp) * k; });
   }
   ctx.restore();
-  claimText('caption', x0 - pad, Z.y - h / 2, tw + pad * 2, h, TEXT, true);
+  claimText('caption', x0 - pad, Z.y - h / 2, tw + pad * 2, h, LOOK.captionFg || TEXT, true);
 }
 // ---------- watermark: the creator's handle (film.sh brand @handle), inside the safe zone ----------
 // It moves between spots every 6 s (one crop can't remove it), skips any spot where words or the hero are,
@@ -527,7 +545,7 @@ function watermark(t) {
   for (let i = 0; i < spots.length && !at; i++) { const [x, y] = spots[(k0 + i) % spots.length]; if (clear(x, y)) at = [x, y]; }
   if (!at) for (let i = 0; i < spots.length && !at; i++) { const [x, y] = spots[(k0 + i) % spots.length]; if (!hit(x, y)) at = [x, y]; }   // no quiet spot: over art beats no mark
   if (at && !HIDE_WORDS) {
-    ctx.globalAlpha = end ? .9 : .5; ctx.textBaseline = 'top'; ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillText(BRAND.handle, at[0] + 2 * U, at[1] + 2 * U);
+    ctx.globalAlpha = end ? .9 : .5; ctx.textBaseline = 'top'; ctx.fillStyle = LOOK.markShadow || 'rgba(0,0,0,.45)'; ctx.fillText(BRAND.handle, at[0] + 2 * U, at[1] + 2 * U);
     ctx.fillStyle = TEXT; ctx.fillText(BRAND.handle, at[0], at[1]);
   }
   ctx.restore();
@@ -544,6 +562,7 @@ function frameAt(frame) {
   const shot = SHOTS.find(s => t >= s.from && t < s.to) || SHOTS[SHOTS.length - 1], cam = shot.cam(t);
   if (HIDE_BACKDROP) {} else if (typeof backdrop === 'function') backdrop(t, cam); else motes(t);
   withCamera(cam, () => world(t));
+  if (LOOK.glow && !HIDE_BACKDROP) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = 'lighter'; ctx.filter = `blur(${Math.round(14 * U)}px)`; ctx.globalAlpha = LOOK.glow; ctx.drawImage(cv, 0, 0); ctx.restore(); }
   if (LOOK.grain !== 0 && !HIDE_BACKDROP) grain(LOOK.grain ?? .06);
   words(t);
   captions(t);
@@ -561,7 +580,7 @@ function finish() {                               // call once at the end of sce
   let sEdge = 0; SHOTS.forEach(s => { if (Math.abs(s.from - sEdge) > 1e-6) CHECKS.push(`SHOTS: gap or overlap at ${sEdge.toFixed(2)}s`); sEdge = s.to; });
   if (sEdge < DUR - 1e-6) CHECKS.push(`SHOTS end at ${sEdge.toFixed(2)}s, before DUR`);
   const SFX = 'click clack switch whooshIn whooshOut whoosh boing clank ding pop popLow tick swish thud clonk creak blip zip flag alarm step notify drip'.split(' ');
-  const LAYERS = 'pad pluck hat8 kick2 kick4 bassHalf clap'.split(' ');
+  const LAYERS = ['pad', 'padSoft', 'pluck', 'lead', 'hat8', 'hat16', 'kick2', 'kick4', 'bassHalf', 'bass8', 'clap', 'crash', ...EXTRA_LAYERS];
   EVENTS.forEach(([at, name]) => { if (!SFX.includes(name)) CHECKS.push(`sound "${name}" at ${at.toFixed(2)}s is not a sound effect${LAYERS.includes(name) ? ' (it is a music layer: put it in SECTIONS)' : ''}; use one of: ${SFX.join(', ')}`); });
   SECTIONS.forEach(([a, , ls]) => ls.forEach(l => { if (!LAYERS.includes(l)) CHECKS.push(`SECTIONS bar ${a}: "${l}" is not a music layer; use: ${LAYERS.join(', ')}`); }));
   EVENTS.forEach(([at, name]) => { if (at < 0 || at > DUR) CHECKS.push(`sound "${name}" at ${at.toFixed(2)}s is outside the film`); });
@@ -573,5 +592,6 @@ function finish() {                               // call once at the end of sce
   window.CAPTION_WORDS = () => (VO.length && LOOK.captions !== false ? captionChunks().flatMap(c => c.words.map(o => ({ w: o.w, at: o.at, to: o.to }))) : []);
   window.CHECKS = CHECKS; window.getWords = () => [...WORD_LOG];
   window.setHideWords = v => { HIDE_WORDS = v; }; window.setHideBackdrop = v => { HIDE_BACKDROP = v; }; window.setHideHero = v => { HIDE_HERO = v; }; window.BG_HEX = BG;
-  window.SCORE = ac => buildGroove(ac, { dur: DUR, bpm: BPM, sections: SECTIONS, events: EVENTS, ...MUSIC });
+  window.SCORE = ac => buildScore(ac, { dur: DUR, bpm: BPM, sections: SECTIONS, events: EVENTS, ...MUSIC });
+  window.MUSIC_SIG = JSON.stringify([MUSIC.kit, MUSIC.harmony, MUSIC.key || 0, BPM, [...new Set(SECTIONS.flatMap(s => s[2]))].sort()]);
 }

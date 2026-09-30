@@ -24,7 +24,10 @@ Every function draws on the current canvas `ctx`, under whatever camera is activ
 The film defines `BPM, BEAT, b`, `SC`, `MUSIC {kit, harmony, key, sfxGain}`, `SECTIONS [[fromBar, toBar, layers]]` (contiguous, 1 bar = 4 beats),
 `SHOTS [{from, to, cam: t => ({cx, cy, k})}]` (contiguous, one per scene), `EVENTS [[seconds, sfx, arg?]]`, `world(t)` and `words(t)`.
 It can also define `backdrop(t)` to replace the default `motes(t)`.
-Music layers: pad, pluck, hat8, kick2, kick4, bassHalf, clap. Harmonies: bright, wistful, dreamy, tense, folk, blues.
+Music (kit/music.js): `MOOD` names a preset in `MOODS` (curious calm warm drive news playful wonder: kit, harmony, key, bpm and patterns);
+`MUSIC = MOODS[MOOD]`, `SECTIONS = musicArc(MOOD, bars)` builds intro -> peak -> settle. Hand-written SECTIONS may use the layers
+pad, padSoft, pluck, lead, hat8, hat16, shuffle, kick2, kick4, bassHalf, bass8, pulse, arp, bell, strum, clap, crash.
+Harmonies: bright, wistful, dreamy, tense, folk, blues, or your own chords (one per bar, MIDI notes).
 
 ## Narration (only when `src/narration.json` exists and `film.sh voice` has run)
 | call | notes |
@@ -42,6 +45,7 @@ Music layers: pad, pluck, hat8, kick2, kick4, bassHalf, clap. Harmonies: bright,
 | `ridge`, `sunDisc`, `cloudsLayer`, `starsLayer`, `planet`, `skylineLayer`, `wavesLayer`, `membrane` | building blocks for custom worlds |
 | `mixHex(a, b, k)`, `AIR`, `NIGHTFALL` | lighten toward blue air or darken toward night (never toward grey) |
 | `LOOK.grain` | film-grain strength (default .06; 0 turns it off) |
+| `WORLD.paper / board / studio / grid` | the style packs' settings (paper fibres, chalk smudges, newsroom grid and rule, neon floor grid) |
 
 ## Maths typesetting (src/tex.json → typeset at build time)
 | call | notes |
@@ -111,3 +115,9 @@ Music layers: pad, pluck, hat8, kick2, kick4, bassHalf, clap. Harmonies: bright,
 ## Palette (src/head.js)
 `BG, DEEP, DISC, TEXT, MUTED, THREAD, WRONG, HERO, CARD`, plus `VAR.{blue, yellow, green, gold, red, purple, teal}` (3b1b colours).
 The QC contrast and fill checks read `BG`.
+
+## Styles (kit/styles/*.js, written into head.js by `film.sh new ... <style>`)
+Each style sets the palette, `STYLE {name, mood, world}` and `LOOK`: `sans` / `mono` / `sansWeight` (fonts), `textIn` (how headline words enter:
+`slide` springs up, `write` reveals left to right, `type` types letter by letter, `wipe` a bar sweeps across; `wipeCol`), `glow` (bloom over
+the world, 0..1), `grain`, and caption / watermark colours (`captionBg`, `captionFg`, `captionHi`, `markShadow`). Light styles (paper, newsroom)
+use deep ink colours so every coloured word keeps 4.5:1. A new style is one file in kit/styles/.

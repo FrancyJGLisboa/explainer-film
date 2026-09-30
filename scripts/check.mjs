@@ -11,7 +11,9 @@
 //     Calibrated on real films: passing template 10%; five weak agent films 2-5%.
 // Exit 1 on any failure. Run from ~ so playwright resolves.
 import { createRequire } from 'node:module';
-import { resolve } from 'node:path';
+import { resolve, dirname, basename, join } from 'node:path';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { homedir } from 'node:os';
 async function loadChromium() {
   for (const name of ['playwright-core', 'playwright']) {
     try { return (await import(name)).chromium; } catch {}
@@ -88,7 +90,7 @@ const res = await page.evaluate(([EVERY, MINC]) => {
   out.allWords = window.getWords();
   out.words = out.allWords.filter(s => s.split(' ').length > 8);
   out.title = document.title; out.platform = window.PLATFORM_NAME; out.zone = window.ZONE_VISUAL || null;
-  out.checks = window.CHECKS; out.brand = window.BRAND_HANDLE;
+  out.checks = window.CHECKS; out.brand = window.BRAND_HANDLE; out.music = window.MUSIC_SIG;
   return out;
 }, [EVERY, +(process.env.MINC || 4.5)]);
 // the score must actually render: a thrown error here means a silent film
@@ -100,6 +102,11 @@ const score = await page.evaluate(async () => {
 await browser.close();
 const span = ts => ts.length > 1 ? `${ts[0]}-${ts[ts.length - 1]}s` : `${ts[0]}s`;
 const fails = [];
+// music variety: this film must not sound like the last film rendered (same kit, chords, key, tempo and patterns)
+{ const film = dirname(resolve(file)), slug = basename(film); if (res.music) { mkdirSync(join(film, 'qc'), { recursive: true }); writeFileSync(join(film, 'qc/music.sig'), res.music); }
+  const logp = join(homedir(), '.cache/explainer-film/music-log.json'), log = existsSync(logp) ? JSON.parse(readFileSync(logp, 'utf8')) : [];
+  const last = [...log].reverse().find(e => e.slug !== slug);
+  if (res.music && last && last.sig === res.music && !process.env.SAME_MUSIC) fails.push(`music: sounds the same as the last film rendered ("${last.slug}"): same kit, chords, key, tempo and patterns. Pick another mood (MOODS in kit/music.js: ${'curious calm warm drive news playful wonder'}), or change the key or harmony`); }
 res.checks.forEach(c => fails.push(`storyboard: ${c}`));
 if (res.frame0 < .01) fails.push(`frame one: the first frame is nearly empty (${(res.frame0 * 100).toFixed(1)}% of the frame drawn, backdrop aside; need >= 1%). Feeds autoplay from frame 0 and it is the default thumbnail: open on a finished picture (the first scene's visual already in place, moving), not a blank that fills in`);
 { let r = []; for (const [t, v] of [...res.motion, [1e9, 1]]) { if (v < .0005) r.push(t); else { if (r.length * EVERY > 2) fails.push(`still stretch: almost nothing moves from ${(r[0] - EVERY).toFixed(2)}s to ${r[r.length - 1]}s (${(r.length * EVERY).toFixed(2)} s). A held key state is fine up to 2 s; beyond that keep it alive: the hero reacts, a highlight travels, a label writes on, a number ticks`); r = []; } } }

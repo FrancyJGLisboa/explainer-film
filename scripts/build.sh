@@ -18,7 +18,7 @@ TITLE=$(sed -n 's#^// TITLE: ##p' "$F/src/head.js" | head -1)
   B="$F/src/brand.json"; [ -f "$B" ] || B="$HOME/.config/explainer-film/brand.json"
   if [ -f "$B" ]; then printf "const BRAND = "; cat "$B"; echo ";"; else echo "const BRAND = null;"; fi
   if [ -f "$F/src/tex.json" ]; then node "$(dirname "$0")/tex.mjs" "$F" >&2; printf "const TEXPATHS = "; cat "$F/tex/paths.json"; echo ";"; else echo "const TEXPATHS = null;"; fi
-  cat "$K/kit.js" "$K/worlds.js" "$K/tex.js"
+  cat "$K/kit.js" "$K/worlds.js" "$K/tex.js" "$K/music.js"
   cat "$F/src/scenes.js"
   cat "$G"
   sed -n '300,$p' "$S"

@@ -47,3 +47,6 @@ The packet also has strips of 5 frames 0.2 s apart around every cut and the open
 
 ## Watermark
 A small semi-transparent handle that moves between the frame edges, and a larger one at the end, is the creator's watermark. It is intended: do not block it, and do not count it as text over art or as a corner label.
+
+## Style packs
+The film may use a style pack (night, paper, chalkboard, neon, newsroom): light backgrounds, serif or chalk fonts, words that are written on, typed on or revealed by a sweeping bar, and a glow are all intended. A word caught half-revealed in a still is motion, not a defect. Judge readability and truth as usual.

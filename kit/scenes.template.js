@@ -3,15 +3,12 @@
 // beat grid -> SC -> MUSIC/SECTIONS/SHOTS/EVENTS -> asserts (fits, shows) -> world/words -> finish().
 // Composition: hero on the left third (s >= 1.1, on its DISC), the main visual fills the right two thirds,
 // words sit in empty space above or below the visual, never across it.
-const BPM = 96, BEAT = 60 / BPM, b = n => n * BEAT;               // 1 beat = 0.625 s, 1 bar = 4 beats; 45 s = 72 beats = 18 bars
+const MOOD = '{{MOOD}}';                                           // music (kit/music.js MOODS): curious calm warm drive news playful wonder; the style's default
+const BPM = {{BPM}}, BEAT = 60 / BPM, b = n => n * BEAT;               // the mood's tempo; 1 bar = 4 beats; DUR = beats x BEAT
 const SC = scenes(                                                 // [name, beats]; names are identifiers; beats sum to DUR
   ['hook', 6], ['naive', 10], ['mechanism', 12], ['build', 14], ['insight', 10], ['limits', 10], ['loop', 10]);
-const MUSIC = { kit: 'percussion', harmony: 'bright', key: 2, sfxGain: .85 };   // kits: electro | acoustic | keys | percussion
-const SECTIONS = [                                                 // [fromBar, toBar, layers], contiguous 0..18; add 1-2 layers per bar
-  [0, 1, ['pad']], [1, 2, ['pad', 'pluck']], [2, 4, ['pad', 'pluck', 'hat8']], [4, 8, ['pad', 'pluck', 'hat8', 'kick2']],
-  [8, 10, ['pad', 'pluck', 'hat8', 'kick2', 'bassHalf']], [10, 13, ['pad', 'pluck', 'hat8', 'kick4', 'bassHalf', 'clap']],
-  [13, 15, ['pad', 'pluck', 'hat8', 'kick2', 'bassHalf']], [15, 17, ['pad', 'pluck', 'hat8', 'kick2']], [17, 18, ['pad', 'pluck', 'kick2']],
-];
+const MUSIC = MOODS[MOOD];                                         // or your own: { kit, harmony, key, sfxGain }
+const SECTIONS = musicArc(MOOD, Math.round(DUR / (4 * BEAT)));      // [fromBar, toBar, layers]: builds, peaks, settles; hand-write it to change the arc
 const still = { cx: W / 2, cy: H / 2, k: 1 };
 const SHOTS = [                                                    // one camera per scene, contiguous; every cut is a scene start
   { from: SC.hook.from, to: SC.naive.from, cam: t => ({ ...still, k: 1 + .02 * prog(t, 0, SC.naive.from) }) },
@@ -21,7 +18,7 @@ const SHOTS = [                                                    // one camera
   { from: SC.limits.from, to: DUR, cam: () => still },
 ];
 const EVENTS = [                                                   // [seconds, sfx]: one per visible action, on beats
-  [b(1), 'boing'], ...[0, 1, 2, 3, 4].map(g => [b(.4 + g * .4), 'pop']), [SC.naive.from, 'whoosh'], ...[0, 1, 2, 3, 4, 5, 6, 7].map(i => [b(8 + i * .5), 'popLow', i % 4]),
+  [b(1), 'boing'], ...[0, 1, 2, 3, 4].map(g => [b(.4 + g * .4), 'pop']), [SC.naive.from, 'clack'], ...[0, 1, 2, 3, 4, 5, 6, 7].map(i => [b(8 + i * .5), 'popLow', i % 4]),
   ...[1, 2, 3, 4, 5, 6, 7].map(i => [b(12.5 + (i - 1) * .5), 'tick']), [SC.mechanism.from, 'swish'], ...[1, 2, 3, 4, 5].map(j => [b(21 + j), 'click']), [b(19), 'zip'], [SC.build.from, 'swish'], [b(31), 'tick'], [b(36), 'ding'],
   [SC.insight.from, 'whoosh'], [b(45), 'flag'], [SC.limits.from, 'swish'], [b(55), 'clonk'], [SC.loop.from, 'whooshOut'], [b(66), 'notify'],
 ];
@@ -49,6 +46,7 @@ shows('the limited curve never runs above the unlimited one, rises above the lin
 fits('bars grow one per half beat', b(8), b(12), SC.naive.from, SC.naive.to);
 
 // ---------- the world ----------
+function backdrop(t, cam) { if (STYLE.world) WORLD[STYLE.world](t, cam); else motes(t); }   // the style's setting; a topic world (WORLD.landscape ...) may replace it
 const HERO_AT = ZONE.hero;                                          // a small presence; the explanation gets the frame
 function world(t) {
   const { x, y, s } = HERO_AT;
@@ -121,13 +119,13 @@ function world(t) {
 // ---------- words: in the headline band (ZONE.head), never across the visual; kine shrinks a line to fit the safe zone ----------
 function words(t) {
   const hx = ZONE.head.x, hy = ZONE.head.y, S = 72 * U;
-  kine('What grows {slow,|#8d9bbd} then {sudden?|#f4d35e}', hx, hy, t, b(.6), b(5.6), { size: 88 * U });
-  kine('Add the {same|#58c4dd} each step.', hx, hy, t, b(6.6), b(15.6), { size: S });
-  kine('Grow by a {share|#f4d35e} of itself.', hx, hy, t, b(16.6), b(27.6), { size: S });
+  kine(`What grows {slow,|${MUTED}} then {sudden?|${VAR.yellow}}`, hx, hy, t, b(.6), b(5.6), { size: 88 * U });
+  kine(`Add the {same|${VAR.blue}} each step.`, hx, hy, t, b(6.6), b(15.6), { size: S });
+  kine(`Grow by a {share|${VAR.yellow}} of itself.`, hx, hy, t, b(16.6), b(27.6), { size: S });
   eq([['s', VAR.yellow], [' = 3 · '], ['1.35', VAR.yellow], ['^t', MUTED]], hx, hy + 10 * U, t, b(29), b(41.6), { size: 84 * U });
-  kine('Slow, then {sudden.|#f4d35e}', hx, hy, t, b(44), b(51.4), { size: S });
-  kine('Real growth hits {limits.|#83c167}', hx, hy, t, b(57.6), b(61.6), { size: S });
-  kine('Same {×1.35,|#f4d35e} every step...', hx, hy - 10 * U, t, b(63), DUR + 5, { size: S });
+  kine(`Slow, then {sudden.|${VAR.yellow}}`, hx, hy, t, b(44), b(51.4), { size: S });
+  kine(`Real growth hits {limits.|${VAR.green}}`, hx, hy, t, b(57.6), b(61.6), { size: S });
+  kine(`Same {×1.35,|${VAR.yellow}} every step...`, hx, hy - 10 * U, t, b(63), DUR + 5, { size: S });
   kine('...until room runs out.', hx + 160 * U, hy + 62 * U, t, b(64.5), DUR + 5, { size: 44 * U, col: MUTED });
 }
 finish();

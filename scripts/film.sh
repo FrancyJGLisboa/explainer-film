@@ -1,7 +1,8 @@
 #!/bin/sh
 # film.sh: the explainer-film pipeline, one command per stage.
 #   film.sh doctor                 can it run here? each requirement OK/MISSING with the fix
-#   film.sh new <slug> ["Title"] [platform]   scaffold ~/films/<slug>; platform: tiktok reels shorts instagram square linkedin youtube x (default youtube)
+#   film.sh new <slug> ["Title"] [platform] [style]   scaffold ~/films/<slug>; platform: tiktok reels shorts instagram square linkedin youtube x (default youtube);
+#                                  style: night (default) paper chalkboard neon newsroom (kit/styles/)
 #   film.sh check <dir>            build + contact sheet (qc/sheet.jpg) + asset audit + layout + rules (contrast, corners, timing)
 #   film.sh stills <dir> 4s,12s    full-size stills into qc/
 #   film.sh new-long <slug> "Title" <n>   a long film: ~/films/<slug>/outline.md + ch01..chNN (each a normal film)
@@ -25,22 +26,33 @@ cmd=$1; shift || true
 case "$cmd" in
   doctor) sh "$HERE/doctor.sh" ;;
   new)
-    slug=$1; title=${2:-$1}; plat=${3:-youtube}; [ -n "$slug" ] || { echo "usage: film.sh new <slug> [title] [platform]"; exit 1; }
+    slug=$1; title=${2:-$1}; plat=${3:-youtube}; style=${4:-night}; [ -n "$slug" ] || { echo "usage: film.sh new <slug> [title] [platform] [style]"; exit 1; }
+    [ -f "$ROOT/kit/styles/$style.js" ] || { echo "unknown style '$style': use $(ls "$ROOT/kit/styles" | sed 's/\.js$//' | tr '\n' ' ')"; exit 1; }
     case "$plat" in tiktok|reels|shorts) wh="1080 1920";; instagram|linkedin) wh="1080 1350";; square) wh="1080 1080";; youtube|x) wh="1920 1080";;
       *) echo "unknown platform '$plat': use tiktok reels shorts instagram square linkedin youtube x"; exit 1;; esac
     set -- $wh; fw=$1; fh=$2
     d=${FILMS_DIR:-$HOME/films}/$slug; [ -e "$d" ] && { echo "exists: $d"; exit 1; }
     mkdir -p "$d/src" "$d/qc"
-    sed -e "s#{{TITLE}}#$title#" -e "s#{{PLATFORM}}#$plat#" -e "s#{{W}}#$fw#" -e "s#{{H}}#$fh#" "$ROOT/kit/head.template.js" > "$d/src/head.js"
-    cp "$ROOT/kit/scenes.template.js" "$d/src/scenes.js"
+    python3 - "$ROOT/kit" "$d/src" "$style" "$title" "$plat" "$fw" "$fh" <<'PY'
+import re, sys, pathlib
+kit, src, style, title, plat, fw, fh = sys.argv[1:8]; kit = pathlib.Path(kit); src = pathlib.Path(src)
+sty = (kit / f"styles/{style}.js").read_text()
+mood = re.search(r"mood: '(\w+)'", sty).group(1)
+bpm = int(re.search(rf"\b{mood}:\s*{{[^}}]*bpm: (\d+)", (kit / "music.js").read_text()).group(1))
+dur = round(72 * 60 / bpm, 4)                                   # the demo's 72 beats at this tempo
+head = (kit / "head.template.js").read_text()
+for k, v in {"TITLE": title, "PLATFORM": plat, "W": fw, "H": fh, "DUR": str(dur), "STYLE": sty.rstrip()}.items(): head = head.replace("{{" + k + "}}", v)
+(src / "head.js").write_text(head)
+(src / "scenes.js").write_text((kit / "scenes.template.js").read_text().replace("{{MOOD}}", mood).replace("{{BPM}}", str(bpm)))
+PY
     cp "$ROOT/references/brief.template.md" "$d/brief.md"
     echo "$d" ;;
   new-long)
-    slug=$1; title=${2:-$1}; n=${3:-3}; plat=${4:-youtube}; [ -n "$slug" ] || { echo "usage: film.sh new-long <slug> [title] [chapters] [platform]"; exit 1; }
+    slug=$1; title=${2:-$1}; n=${3:-3}; plat=${4:-youtube}; style=${5:-night}; [ -n "$slug" ] || { echo "usage: film.sh new-long <slug> [title] [chapters] [platform] [style]"; exit 1; }
     d=${FILMS_DIR:-$HOME/films}/$slug; [ -e "$d" ] && { echo "exists: $d"; exit 1; }
     mkdir -p "$d"; printf '# %s\n\n**Core idea:**\n\n| ch | title (must name the topic) | one idea | seconds |\n|---|---|---|---|\n' "$title" > "$d/outline.md"
     i=1; while [ $i -le "$n" ]; do c=$(printf 'ch%02d' $i)
-      FILMS_DIR="$d" sh "$0" new "$c" "$title: chapter $i" "$plat" >/dev/null; echo "| $i | $title: ... |  | 45 |" >> "$d/outline.md"; i=$((i+1)); done
+      FILMS_DIR="$d" sh "$0" new "$c" "$title: chapter $i" "$plat" "$style" >/dev/null; echo "| $i | $title: ... |  | 45 |" >> "$d/outline.md"; i=$((i+1)); done
     echo "$d" ;;
   check-long)
     d=$(cd "$1" && pwd); s=0
@@ -152,6 +164,14 @@ PY
       sh "$HERE/mix.sh" "$d" "$d/voice/plan.json"
     fi
     sh "$HERE/export.sh" "$d"
+    python3 - "$d" <<'PY'                         # remember this film's music, so the next film sounds different
+import json, sys, pathlib, time
+d = pathlib.Path(sys.argv[1]); sig = d / "qc/music.sig"; logp = pathlib.Path.home() / ".cache/explainer-film/music-log.json"
+if sig.exists():
+    log = json.loads(logp.read_text()) if logp.exists() else []
+    log = [e for e in log if e["slug"] != d.name] + [{"slug": d.name, "sig": sig.read_text(), "at": int(time.time())}]
+    logp.parent.mkdir(parents=True, exist_ok=True); logp.write_text(json.dumps(log[-20:]))
+PY
     if [ -f "$d/voice/timing.json" ]; then   # narrated: check the finished film by ear
       sh "$0" listen "$d" > "$d/voice/listen.log" 2>&1; st=$?
       grep -E "^(- [0-7]?[0-9]%|  - |[0-9]+ words|LISTEN|  line|  captions)" "$d/voice/listen.log"; exit $st

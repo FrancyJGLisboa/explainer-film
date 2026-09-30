@@ -18,6 +18,17 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
   Pass it to `film.sh new <slug> "<Title>" <platform>`: it sets the canvas and the **safe zone** (clear of the app's own buttons and captions).
   Lay everything out from `ZONE` (head, visual, hero, caption) and `SAFE`, never from fixed pixels, so the film fits its platform;
   `film.sh check` fails words that fall outside the safe zone. For several platforms, make one film per platform.
+- **Style from the user's words** (4th argument of `film.sh new`; each sets colours, font, how words enter, backdrop and a music mood):
+  - `night` (default): dark navy, bold rounded type, words spring in. General explainers.
+  - `paper`: cream paper, ink colours, book serif, words written on; calm music. History, health, anything that should feel trustworthy.
+  - `chalkboard`: green slate, chalk type, pastel chalk, words written on; warm strummed music. Maths, science, "a lesson".
+  - `neon`: black, glowing lines, condensed type typed on, grid floor; fast synth music. Tech, AI, startups.
+  - `newsroom`: white and navy, red rule, words revealed by a sweeping bar; serious pulse. Business, finance, policy, markets.
+
+  If the user names none, pick the one that fits the topic (and say which in the delivery message). "In the style of <video>" still uses `film.sh reference`.
+- **Music from the mood**, not a fixed track: the style picks a default mood; change `MOOD` in scenes.js when the topic's feeling differs.
+  Moods (kit/music.js): `curious` (marimba, 96 bpm), `calm` (electric piano and bells, 84), `warm` (nylon strum, swung shaker, 92), `drive` (synth arpeggio, 112), `news` (ticking pulse, minor, 104), `playful` (swung marimba, blues, 104), `wonder` (slow arpeggio and bells, 80).
+  `SECTIONS = musicArc(MOOD, bars)` builds the arc (intro, build, peak, settle). `film.sh check` fails a film whose music is identical to the last film rendered.
 - 45 s of pictures, 60 fps, in the language of the input. **Narrated with burned-in captions by default** (muted viewers read, others listen); "music only" / "no voice" turns narration off. With narration, films usually run 50–60 s.
 - The narrator is the **analyst's voice** explaining to the viewer: never a named person, never the source's speaker impersonated, and never John Tuld (he is the audience model). Voice choice:
   - "ASMR" / "whisper" / "calm" → `af_nicole`
@@ -26,8 +37,8 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
   - Portuguese → `pf_dora` (female) or `pm_alex` (male) with lang `pt-br`
 
   All voices are free and run locally (Kokoro, Apache 2.0).
-- Time grid: 1 beat = 60 / BPM s, 1 bar = 4 beats. 45 s at 96 bpm = 72 beats = 18 bars. SC counts beats, SECTIONS counts bars.
-- "60 seconds" → DUR = 60 = 96 beats = 24 bars (beats = DUR × BPM / 60). Social feeds reward short: 15–30 s for TikTok/Reels/Shorts works well.
+- Time grid: 1 beat = 60 / BPM s (BPM comes from the mood), 1 bar = 4 beats. At 96 bpm, 45 s = 72 beats = 18 bars; at 84 bpm, 72 beats = 51.4 s. SC counts beats, SECTIONS counts bars; DUR = beats × 60 / BPM exactly.
+- "60 seconds" → beats = DUR × BPM / 60 (96 beats at 96 bpm), rounded to whole beats, then DUR = beats × 60 / BPM. Social feeds reward short: 15–30 s for TikTok/Reels/Shorts works well.
 - Films go in `~/films/<slug>/`.
 - **Longer than 60 s** ("3 minutes", "a longer video", "in chapters") → a chapter film:
   - `film.sh new-long <slug> "<Title>" <n>` makes `outline.md` plus `ch01..chNN`. Each chapter is a normal film of 30–60 s with one idea, and its title names the topic.
@@ -41,7 +52,7 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
 
 **Watermark.** Every film carries the creator's handle, set once with `film.sh brand "@handle"` (a film can override it with `src/brand.json`). It moves between the edges of the frame every 6 s, avoids words and the hero, becomes a signature for the last 2.5 s, and goes into the file's metadata. If `film.sh check` notes that no handle is set, tell the user in the delivery message; never invent a handle.
 
-**1. Scaffold.** `film.sh new <slug> "<Title>"` prints the folder.
+**1. Scaffold.** `film.sh new <slug> "<Title>" <platform> <style>` prints the folder.
 
 **1b. Reference (only when the user gives one: "in the style of <video or link>").** Run `film.sh reference <dir> <file|link>`. It measures the reference into `refs/`: frames every 0.5 s, a contact sheet, cuts and shot lengths, and the dominant palette. Look at `refs/sheet.jpg` and a few frames, then fill in `refs/style.md`. Take the **grammar** (palette roles, type, shot length, transitions, camera, motion feel, texture, how text enters and exits), **never the content**: no copied characters, logos, text or scenes. Set `src/head.js` from it. Both reviewers read `refs/style.md`.
 
@@ -73,7 +84,7 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
 
 **2c. Plan review (before any scene code).** Run `film.sh plan <dir>`. The independent reviewer judges the brief: a mechanism happening in every scene, correct science, a colour plan that tells the truth, real tests, sourced claims, one big visual per scene, and a full arc. Fix what it blocks and run it again (5 rejections stop the loop). It may approve **with conditions**: small fixes you must make in the scenes, which the film reviewer then checks. The film review later refuses to run unless the current brief has an approved plan, so any later brief change means another plan review.
 
-**3. Look (`src/head.js`).** Retune HERO and THREAD to the topic (palette guide in style.md). Give each quantity one VAR colour.
+**3. Look (`src/head.js`).** The style pack wrote the palette, font and `LOOK` into head.js; keep its character. Retune HERO and THREAD to the topic (palette guide in style.md). Give each quantity one VAR colour.
 - **World:** pick the environment that matches the topic's real setting: `WORLD.landscape` (nature, land, farming), `space` (astronomy, scale), `city` (people, economy), `ocean` (water, climate), `micro` (biology, chemistry). Use `function backdrop(t, cam) { WORLD.x(t, cam); }`, or none (plain dark ground) for pure maths.
 - A world is the setting, never the explanation: the checks ignore it for frame fill.
 
