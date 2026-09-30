@@ -81,13 +81,13 @@ function actor(name, x, y, s, st = {}) {
   ctx.scale(grow, grow);
   ell(-S.bodyW * .26 + stepA * 14, -8 - Math.max(0, stepA) * 16, 24, 13, 0, tint(body, .66)); ell(S.bodyW * .26 - stepA * 14, -8 - Math.max(0, -stepA) * 16, 24, 13, 0, tint(body, .66));
   ctx.translate(0, -bob); ctx.rotate(tilt + (idle.tilt || 0) + (walk ? .05 : 0)); ctx.scale(idle.sx || 1, idle.sy || 1);
-  const arm = (side, a) => { ctx.save(); ctx.translate(...pivot(side)); ctx.rotate(-side * (.5 + a + (walk ? side * stepA * .3 : 0))); rr(-A.w / 2, 0, A.w, A.len, A.w / 2, tint(body, .8)); circ(0, A.len, A.w * .62, tint(body, .8)); ctx.restore(); };
+  const arm = (side, a) => { ctx.save(); ctx.translate(...pivot(side)); ctx.rotate(-side * (.5 + a + (walk ? side * stepA * .3 : 0))); rr(-A.w / 2, 0, A.w, A.len, A.w / 2, tint(body, .8)); circ(0, A.len, A.w * .62, S.hand || tint(body, .8)); ctx.restore(); };
   arm(-1, aL);
   if (S.back) S.back(t, st, body);                                  // things behind the body (hair, tails)
   S.path(t, st); ctx.fillStyle = body; ctx.fill();
   ctx.save(); S.path(t, st); ctx.clip(); ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.fillRect(S.bodyW * .22, -S.h - 60, S.bodyW, S.h + 60); ctx.restore();   // flat Kurzgesagt shade on the far side
   if (S.under) S.under(t, st, body);
-  actorFace(S, { mood, look, blink, talk, body });
+  actorFace(S, { mood, look, blink, talk, body: S.skin || body });
   if (S.feature) S.feature(t, st, body);
   if (role && ROLES[role]) ROLES[role](S); else if (role && !CHECKS.some(c => c.includes(`role "${role}"`))) CHECKS.push(`role "${role}" does not exist (roles: ${Object.keys(ROLES).join(', ')})`);
   arm(1, aR);
@@ -111,7 +111,7 @@ function actorFace(S, { mood, look, blink, talk, body }) {
     ctx.restore(); };
   eye(-1); eye(1);
   const brow = { surprised: [0, -.6], worried: [.35, -.15], sad: [.3, 0], think: [0, 0], excited: [0, -.4] }[mood] || (S.brows ? [0, 0] : null);
-  if (brow) [-1, 1].forEach(sd => { const up = mood === 'think' && sd > 0 ? -.5 : 0; ctx.save(); ctx.translate(sd * E.dx, E.y - E.r * 1.45 + (brow[1] + up) * E.r); ctx.rotate(sd * brow[0] + (up ? -.15 : 0)); rr(-E.r * .7, -E.r * (S.brows || .14), E.r * 1.4, E.r * (S.brows || .14) * 2, E.r * .14, tint(body, .5)); ctx.restore(); });   // think: one brow raised
+  if (brow) [-1, 1].forEach(sd => { const up = mood === 'think' && sd > 0 ? -.5 : 0; ctx.save(); ctx.translate(sd * E.dx, E.y - E.r * 1.45 + (brow[1] + up) * E.r); ctx.rotate(sd * brow[0] + (up ? -.15 : 0)); rr(-E.r * .7, -E.r * (S.brows || .14), E.r * 1.4, E.r * (S.brows || .14) * 2, E.r * .14, S.browCol || tint(body, .5)); ctx.restore(); });   // think: one brow raised
   const my = S.mouthY; ctx.fillStyle = DEEP; ctx.strokeStyle = DEEP; ctx.lineWidth = 6; ctx.lineCap = 'round';
   if (talk > .02 || mood === 'surprised') { const o = mood === 'surprised' ? Math.max(.6, talk) : talk; ell(0, my, 12 + 6 * o, 3 + 15 * o, 0, DEEP); }
   else { ctx.beginPath();

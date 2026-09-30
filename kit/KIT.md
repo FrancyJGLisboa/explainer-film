@@ -123,7 +123,7 @@ Harmonies: bright, wistful, dreamy, tense, folk, blues, or your own chords (one 
 | `say(a, text, p, o)` | speech bubble over a's head, typed on |
 | `walkTo(t, t0, t1, x0, x1)` | `{x, walk, face}` for a character walking between two points |
 | `ITEM.crate/coin/cash/doc/box/drop`, `drawItem(item, x, y, s)` | things that change hands: `{kind, col, n, size, id}` (col = the entity's VAR colour) |
-| `registerActor(name, spec)` | add a body: `{col, h, bodyW, path, eye {y, dx, r, rR?, lid?}, mouthY, arm {x, y, len, w}, top, headW, chestY, idle?, pose?, back?, under?, feature?}` |
+| `registerActor(name, spec)` | add a body: `{col, h, bodyW, path, eye {y, dx, r, rR?, lid?}, mouthY, arm {x, y, len, w}, top, headW, chestY, idle?, pose?, back?, under?, feature?, skin?, hand?, browCol?}`. Human bodies: `skin` colours eyelids, `hand` the hands, `browCol` the brows; `back` draws legs behind the torso, `under` the head, `feature` glasses and beards |
 
 The kit ships the plain `person`. A private cast lives outside this repo and loads from `~/.config/explainer-film/cast/cast.js`.
 Checks: every character on screen is in the brief's `## Cast` table; at most 3 at once; scale at most 1.3; a character's colour is not a VAR colour; the same item is never drawn twice in one frame.
