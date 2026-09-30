@@ -37,6 +37,7 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
   - Portuguese → `pf_dora` (female) or `pm_alex` (male) with lang `pt-br`
 
   All voices are free and run locally (Kokoro, Apache 2.0).
+  - "in my voice" / "with my voice" → `"voice": "own"`: the creator's cloned voice from a local tool at `~/voz` (PT or EN; about 12 s of computing per second of speech, cached). Only when the user asks for it.
 - Time grid: 1 beat = 60 / BPM s (BPM comes from the mood), 1 bar = 4 beats. At 96 bpm, 45 s = 72 beats = 18 bars; at 84 bpm, 72 beats = 51.4 s. SC counts beats, SECTIONS counts bars; DUR = beats × 60 / BPM exactly.
 - "60 seconds" → beats = DUR × BPM / 60 (96 beats at 96 bpm), rounded to whole beats, then DUR = beats × 60 / BPM. Social feeds reward short: 15–30 s for TikTok/Reels/Shorts works well.
 - Films go in `~/films/<slug>/`.
