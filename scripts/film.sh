@@ -6,6 +6,7 @@
 #   film.sh check <dir>            build + contact sheet (qc/sheet.jpg) + asset audit + layout + rules (contrast, corners, timing)
 #   film.sh stills <dir> 4s,12s    full-size stills into qc/
 #   film.sh new-long <slug> "Title" <n>   a long film: ~/films/<slug>/outline.md + ch01..chNN (each a normal film)
+#   film.sh plan-long <dir>       plan-review every chapter at once
 #   film.sh check-long <dir> / render-long <dir>   check every chapter (+ same look) / render changed chapters and join them
 #   film.sh reference <dir> <video|link>  study a reference video's grammar -> refs/ (frames, sheet, cuts, palette, style.md to fill)
 #   film.sh plan <dir>             independent review of the plan (brief + narration) before any scene code
@@ -22,6 +23,7 @@ JA=$HOME/.agents/skills/javascript-animation/scripts; ST=$HOME/.agents/skills/so
 [ -d "$HOME/.local/node/bin" ] && export PATH=$HOME/.local/node/bin:$PATH
 # node scripts resolve playwright from the working directory: prefer this repo's node_modules, else ~
 RUN=$HOME; [ -d "$ROOT/node_modules/playwright-core" ] && RUN=$ROOT
+filmkey() { p=$(dirname "$1"); if [ -f "$p/outline.md" ]; then echo "$(basename "$p")_$(basename "$1")"; else basename "$1"; fi; }   # chapters: <film>_chNN, so review state never mixes two films
 hash16() { if command -v shasum >/dev/null; then shasum -a 256 "$1"; else sha256sum "$1"; fi | cut -c1-16; }
 cmd=$1; shift || true
 case "$cmd" in
@@ -55,6 +57,10 @@ PY
     i=1; while [ $i -le "$n" ]; do c=$(printf 'ch%02d' $i)
       FILMS_DIR="$d" sh "$0" new "$c" "$title: chapter $i" "$plat" "$style" >/dev/null; echo "| $i | $title: ... |  | 45 |" >> "$d/outline.md"; i=$((i+1)); done
     echo "$d" ;;
+  plan-long)
+    # plan-review every chapter at the same time (each chapter's brief + narration), then print each verdict
+    d=$(cd "$1" && pwd); for c in "$d"/ch*/; do c=${c%/}; sh "$0" plan "$c" > "$c/qc.plan.log" 2>&1 & done; wait
+    s=0; for c in "$d"/ch*/; do c=${c%/}; echo "== $(basename "$c")"; grep -vE '^reviewing' "$c/qc.plan.log"; grep -q '^APPROVED' "$c/qc.plan.log" || s=1; done; exit $s ;;
   check-long)
     d=$(cd "$1" && pwd); s=0
     ref=$(ls -d "$d"/ch*/ | head -1)
@@ -115,7 +121,7 @@ PY
     sh "$HERE/reference.sh" "$1" "$2" ;;
   plan)
     # independent review of the PLAN (brief.md + narration) before any scene code; approval is keyed to this exact brief
-    d=$(cd "$1" && pwd); slug=$(basename "$d"); V=$HOME/.cache/explainer-film/verdicts; W=$d/qc/plan; rm -rf "$W"; mkdir -p "$W"
+    d=$(cd "$1" && pwd); slug=$(filmkey "$d"); V=$HOME/.cache/explainer-film/verdicts; W=$d/qc/plan; rm -rf "$W"; mkdir -p "$W"
     grep -qE "\*\*Core (idea|finding)[^*]*\*\*:? *[A-Za-z0-9]" "$d/brief.md" 2>/dev/null || { echo "REFUSED: fill in brief.md first (the model's core finding, kit plan, reality map with tests, claims, beats)."; exit 1; }
     { echo "# Plan packet: $(sed -n 's#^// TITLE: ##p' "$d/src/head.js")"; echo; cat "$d/brief.md"
       [ -f "$d/src/narration.json" ] && { printf '\n## Narration (src/narration.json)\n\n```json\n'; cat "$d/src/narration.json"; printf '\n```\n'; }
@@ -126,7 +132,7 @@ PY
     echo "reviewing the plan with an independent reviewer (about 1 min)..."
     LEDGER="$d/critique.md" LEDGER_KIND=plan CAP=5 sh "$HERE/judge.sh" "$W" "$ROOT/references/plan-reviewer.md" plan-packet.md "$V/plans/$h.json" "$V/plan_$slug" ;;   # plans are cheap: 5 rounds
   review)
-    d=$(cd "$1" && pwd); slug=$(basename "$d"); V=$HOME/.cache/explainer-film/verdicts; mkdir -p "$V"
+    d=$(cd "$1" && pwd); slug=$(filmkey "$d"); V=$HOME/.cache/explainer-film/verdicts; mkdir -p "$V"
     # the film review needs an approved plan for the current brief (REVIEW_ANYWAY=1 is for calibrating the reviewer only)
     bh=$(hash16 "$d/brief.md" 2>/dev/null)
     if [ "${REVIEW_ANYWAY:-0}" != 1 ]; then

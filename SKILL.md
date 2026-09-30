@@ -45,6 +45,15 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
   - Fill `outline.md` first (core idea; one row per chapter), then make each chapter with steps 2–5.
   - Keep one look: `head.js` palette identical in every chapter. Keep the same hero and thread. Open each chapter with `chapterCard(n, title, t, 0, b(5))`, and end it on a quiet last bar.
   - `film.sh check-long <dir>` checks every chapter and the shared look; `film.sh render-long <dir>` renders the chapters that changed and joins them into `<slug>.mp4`.
+  - **Build the chapters in parallel** (about 40% faster for 2 chapters, more for 3+). The order:
+    1. You write `outline.md`, then every chapter's `brief.md` and `src/narration.json` yourself, so the story, voice and claims stay one piece. Run `film.sh voice` on each chapter.
+    2. `film.sh plan-long <dir>` plan-reviews all chapters at once. Fix and rerun until every chapter is APPROVED.
+    3. Start one agent per chapter at the same time (the Agent tool; a forked agent keeps this context). If agents aren't available, build the chapters one after another. Give each agent exactly:
+       - its chapter folder, and the goal: `film.sh check` exits 0, then `film.sh review` until APPROVED (at most 3 rejections; if capped, report the verdict);
+       - its beats (`SC`), and `DUR` = beats × BEAT (the only line it may change in head.js; the palette stays identical across chapters);
+       - the plan's conditions (in its `critique.md`), the colour plan, and the shared opener (a small chapter tag in the headline band);
+       - don't render, don't touch other chapters, the kit or brief.md (the plan approval is keyed to it).
+    4. When every agent reports APPROVED, run `film.sh check-long` then `film.sh render-long` yourself.
 
 ## Pipeline
 
