@@ -518,9 +518,14 @@ function watermark(t) {
   const spots = end ? [[ZONE.caption.x - w / 2, ZONE.caption.y - h / 2], [ZONE.caption.x - w / 2, ZONE.caption.y - h * 2.2], [S.x1 - m - w, S.y1 - m - h]]
     : (() => { const V = ZONE.visual, ys = [V.y + V.h * .08, V.y + V.h * .5, V.y + V.h * .88, S.y0 + m, S.y1 - m - h];   // sides of the visual first, corners last
         return ys.flatMap((y, i) => [[S.x1 - m - w, y], [S.x0 + m, y]].map(p => [p[0], Math.min(S.y1 - m - h, Math.max(S.y0 + m, p[1]))])) })();
+  const busy = (x, y) => { try { const X = ctx.getTransform(), px = Math.max(0, Math.round(x * X.a + X.e)), py = Math.max(0, Math.round(y * X.d + X.f));   // art under the spot? (edges, shapes)
+      const d = ctx.getImageData(px, py, Math.max(1, Math.round(w * X.a)), Math.max(1, Math.round(h * X.d))).data; let n = 0, sum = 0; for (let i = 0; i < d.length; i += 16) { sum += d[i] + d[i + 1] + d[i + 2]; n++; }
+      const mean = sum / n; let off = 0; for (let i = 0; i < d.length; i += 16) if (Math.abs(d[i] + d[i + 1] + d[i + 2] - mean) > 90) off++; return off / n > .02; } catch { return false; } };
+  const clear = (x, y) => !hit(x, y) && !busy(x, y);
   const hit = (x, y) => [...LAYOUT.filter(L => L.kind === 'text'), ...(heroBox ? [heroBox] : [])].some(L => x < L.x + L.w + m && x + w + m > L.x && y < L.y + L.h + m && y + h + m > L.y);
   const k0 = end ? 0 : (Math.floor(t / 6) * 3) % spots.length; let at = null;   // jump to a different side and height every 6 s
-  for (let i = 0; i < spots.length && !at; i++) { const [x, y] = spots[(k0 + i) % spots.length]; if (!hit(x, y)) at = [x, y]; }
+  for (let i = 0; i < spots.length && !at; i++) { const [x, y] = spots[(k0 + i) % spots.length]; if (clear(x, y)) at = [x, y]; }
+  if (!at) for (let i = 0; i < spots.length && !at; i++) { const [x, y] = spots[(k0 + i) % spots.length]; if (!hit(x, y)) at = [x, y]; }   // no quiet spot: over art beats no mark
   if (at && !HIDE_WORDS) {
     ctx.globalAlpha = end ? .9 : .5; ctx.textBaseline = 'top'; ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillText(BRAND.handle, at[0] + 2 * U, at[1] + 2 * U);
     ctx.fillStyle = TEXT; ctx.fillText(BRAND.handle, at[0], at[1]);
