@@ -82,6 +82,7 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
 - **Composition** (checked by frame fill):
   - 16:9: hero on the left third at s ≥ 1.1, on its DISC; the main visual fills the right two thirds (about x 780–1820, y 250–900).
   - Words go in the empty band above or below the visual, never across it.
+  - Cuts: the old scene is gone by the cut (it exits in the 0.4 s before it) and the new one starts on the cut. Never draw both at once: the review's transition strips catch overlapping scenes.
   - Every scene has one big thing on screen. No empty tail: the last scene keeps the story's object in view.
 - `world(t)` draws in world coordinates under the camera; `words(t)` draws in screen space. The file ends with `finish()`.
 - **Characters act.** Use the hero's mood to track the story (`plain → think → surprised/worried → happy/excited`). Use `walk` to move between places, `talk: voiceLevel(t)` when narrated, and `waveR: t` to greet.
@@ -95,7 +96,9 @@ Kit parts:
 - Sfx names: pop, popLow, boing, ding, tick, click, clack, swish, whoosh, whooshIn, whooshOut, thud, clonk, zip, blip, flag, alarm, notify, drip, step, creak, clank, switch.
 
 **5. QC loop (up to 3 rounds).** Run `film.sh check <dir>`. It must exit 0. It checks:
-- collisions and contrast behind text
+- collisions and contrast behind text (4.5:1)
+- first frame: frame 0 is a finished picture (≥ 1% of the frame drawn, backdrop aside), since feeds autoplay and thumbnail from it
+- still stretches: no more than 2 s where nothing moves (keep a held state alive: the hero reacts, a highlight travels, a number ticks)
 - text over art (lines or shapes crossing a headline)
 - corners and off-frame text
 - overruns (`fits`), claims (`shows`) and storyboard/music coverage
@@ -112,6 +115,7 @@ Then open `qc/sheet.jpg` and answer this in writing, scene by scene, fixing ever
 Use `film.sh stills <dir> 12s,20s` to look closer. Don't render until the check passes and all five answers are yes.
 
 **5b. Independent review.** When `film.sh check` passes, run `film.sh review <dir>`. A fresh reviewer that did not make the film judges stills of every scene against fixed rules you cannot change. Fix every blocking problem it lists, then check and review again. Suggestions are optional. After 3 rejections the script stops: report the verdict to the user and let them decide. Render needs an approval of the exact current build, so any change after approval means reviewing again.
+  The reviewer also sees 5-frame strips (0.2 s apart) around every cut and the opening. Every verdict is appended to `critique.md` in the film folder as a checklist: after fixing, tick each item (`[x]`) and add a short note of what you changed. The next review reads the log, so settled items stay settled and "claimed fixed but not" gets caught. Plan reviews log there too.
 
 **6. Render.** `film.sh render <dir>`, about 2.5 min. Cues are the scene starts (SHOTS). If sync-check reports:
 - **STARTLE** (loudness jump > 6 dB): bring the music layers in more gradually around that cut (1–2 new layers per bar, never kick and bass together) or use a softer sfx.

@@ -14,7 +14,7 @@ const SECTIONS = [                                                 // [fromBar, 
 ];
 const still = { cx: W / 2, cy: H / 2, k: 1 };
 const SHOTS = [                                                    // one camera per scene, contiguous; every cut is a scene start
-  { from: SC.hook.from, to: SC.naive.from, cam: t => ({ ...still, k: 1 + .03 * prog(t, 0, SC.naive.from) }) },
+  { from: SC.hook.from, to: SC.naive.from, cam: t => ({ ...still, k: 1 + .02 * prog(t, 0, SC.naive.from) }) },
   { from: SC.naive.from, to: SC.build.from, cam: () => still },
   { from: SC.build.from, to: SC.insight.from, cam: () => still },
   { from: SC.insight.from, to: SC.limits.from, cam: () => still },   // no zoom: the whole curve, slow part included, stays in frame
@@ -22,7 +22,7 @@ const SHOTS = [                                                    // one camera
 ];
 const EVENTS = [                                                   // [seconds, sfx]: one per visible action, on beats
   [b(1), 'boing'], ...[0, 1, 2, 3, 4].map(g => [b(.4 + g * .4), 'pop']), [SC.naive.from, 'whoosh'], ...[0, 1, 2, 3, 4, 5, 6, 7].map(i => [b(8 + i * .5), 'popLow', i % 4]),
-  [SC.mechanism.from, 'swish'], [b(19), 'zip'], [SC.build.from, 'swish'], [b(31), 'tick'], [b(36), 'ding'],
+  ...[1, 2, 3, 4, 5, 6, 7].map(i => [b(12.5 + (i - 1) * .5), 'tick']), [SC.mechanism.from, 'swish'], ...[1, 2, 3, 4, 5].map(j => [b(21 + j), 'click']), [b(19), 'zip'], [SC.build.from, 'swish'], [b(31), 'tick'], [b(36), 'ding'],
   [SC.insight.from, 'whoosh'], [b(45), 'flag'], [SC.limits.from, 'swish'], [b(55), 'clonk'], [SC.loop.from, 'whooshOut'], [b(66), 'notify'],
 ];
 
@@ -60,6 +60,7 @@ function world(t) {
   if (t < SC.naive.from + 1) {
     const out = ease(prog(t, SC.naive.from, SC.naive.from + .8)), gap = Math.min(60 * U, V.w / 16.5), rowH = V.h / 5.2;
     ROWS.forEach((n, g) => { const p = back(prog(t, b(.4 + g * .4), b(.8 + g * .4)));   // all rows up by 1.3 s: feeds decide fast
+      for (let k = 0; k < n; k++) circ(V.x + V.w / 2 + (k - (n - 1) / 2) * gap, V.y + rowH * (g + .5) + out * H, gap * .4, null, [MUTED, 3]);   // empty slots from frame 0: the first frame is a finished picture
       for (let k = 0; k < n; k++) if (p > 0) circ(V.x + V.w / 2 + (k - (n - 1) / 2) * gap, V.y + rowH * (g + .5) + out * H, gap * .4 * p, VAR.yellow); });
   }
   // naive -> mechanism: the same bars, re-grown by a different rule (morph, not a cut)
@@ -68,13 +69,19 @@ function world(t) {
     const B = { x: V.x - 20 * kx, y: V.y + 40 * ky, w: V.w + 40 * kx, h: V.h - 40 * ky };
     ctx.save(); ctx.translate(0, out * H);
     const top = bars(B.x, B.y, B.w, B.h, vals, 36, prog(t, b(7.5), b(12.5)), [m > .5 ? VAR.yellow : VAR.blue]);
+    if (m === 0) {                                                 // adding: the same +2 block lands on top of each bar in turn
+      const bw = B.w / (N + (N - 1) * .25);
+      for (let i = 1; i < N; i++) { const q = back(prog(t, b(12 + (i - 1) * .5), b(12.5 + (i - 1) * .5))); if (q <= 0) continue; const [cx, ty] = top(i);
+        rr(cx - bw / 2, ty, bw, B.h * 2 / 36 * q, 6, tint(VAR.blue, 1.35)); }
+    }
     if (m > .99 && t < SC.build.from) {                              // each step's gain (bar i minus bar i-1), drawn on top of the bar: the gains grow
       const bw = B.w / (N + (N - 1) * .25), gp = prog(t, b(20), b(21.5));
       for (let i = 1; i < N; i++) { const q = back(prog(gp, (i - 1) / N, (i - 1) / N + .3)); if (q <= 0) continue; const [cx, ty] = top(i), gh = B.h * (EXP[i] - EXP[i - 1]) / 36;
         rr(cx - bw / 2, ty, bw, gh * q, 6, tint(VAR.yellow, 1.35)); }
     }
-    if (t > b(21) && t < SC.build.from) { const [x0, y0] = top(5), [x1, y1] = top(6); arrow(x0, y0 - 30 * ky, x1, y1 - 30 * ky, prog(t, b(21), b(22)), TEXT, 5);
-      pill('×1.35', (x0 + x1) / 2, Math.min(y0, y1) - 80 * ky, prog(t, b(22), b(22.5)), { align: 'center', bg: VAR.yellow, id: 'ratio' }); }
+    if (t > b(21) && t < SC.build.from) { const k = 1 + Math.min(5, Math.floor(prog(t, b(21), b(27)) * 6)), k0 = b(21 + (k - 1));   // walks pair to pair
+      const [x0, y0] = top(k), [x1, y1] = top(k + 1); arrow(x0, y0 - 30 * ky, x1, y1 - 30 * ky, prog(t, k0, k0 + .5), TEXT, 5);
+      pill('×1.35', (x0 + x1) / 2, Math.min(y0, y1) - 80 * ky, prog(t, k0 + .3, k0 + .6), { align: 'center', bg: VAR.yellow, id: 'ratio' }); }
     ctx.restore();
   }
   // build: both rules as curves on one set of axes; limits adds the ceiling and the curve that levels off under it
@@ -103,7 +110,8 @@ function world(t) {
       tip = plot(AX, logi, 0, X_END, prog(t, b(54), b(57.5)), VAR.green) || tip;
       callout('real growth', AX.X(18), AX.Y(logi(18)), AX.X(16.5), AX.Y(cap) - 60 * ky, prog(t, b(57.5), b(58)), { bg: VAR.green });
     }
-    if (tip && t < SC.loop.from) thread(tip[0], tip[1], 14 * U);   // one thread dot at a time: in the loop it lives with the hero
+    if (t > b(58) && t < SC.loop.from) { const u = X_END - 14 * Math.sin(Math.PI * prog(t, b(58), b(62))); thread(AX.X(u), AX.Y(logi(u)), 16 * U); }   // rides the green curve: steep middle, flat end
+    else if (tip && t < SC.loop.from) thread(tip[0], tip[1], 14 * U);   // one thread dot at a time: in the loop it lives with the hero
     ctx.restore();
   }
   // loop: the one shape comes home and orbits the hero

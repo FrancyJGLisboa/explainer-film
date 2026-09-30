@@ -37,3 +37,9 @@ Read `plan-packet.md` in the current directory.
   what the picture should show instead. No vague advice.
 - If the packet includes a **previous plan review**, check each earlier required fix first, and don't raise as blocking
   something you passed before unless the new plan made it worse.
+
+## Critique log
+The packet may end with a critique log: every earlier round, with the maker's notes on how each item was fixed (`[x]` = fixed, with a note).
+- An item the log marks fixed is settled: do not raise it again unless the stills show it has come back (then say "regressed").
+- An item marked fixed that the stills show is not fixed blocks approval ("claimed fixed but not").
+- Do not move the goalposts: new blocking problems must be real defects under these rules, not preferences that could have been raised earlier.

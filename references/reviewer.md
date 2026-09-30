@@ -35,3 +35,12 @@ Read `packet.md` in the review folder first, then look at **every** still it lis
 - Each problem names the scene and the still, says what is wrong in one sentence, and gives one concrete fix
   (what to draw, move, enlarge or remove). No vague advice.
 - Don't grade effort, don't praise, don't soften. Be specific and short.
+
+## Critique log
+The packet may end with a critique log: every earlier round, with the maker's notes on how each item was fixed (`[x]` = fixed, with a note).
+- An item the log marks fixed is settled: do not raise it again unless the stills show it has come back (then say "regressed").
+- An item marked fixed that the stills show is not fixed blocks approval ("claimed fixed but not").
+- Do not move the goalposts: new blocking problems must be real defects under these rules, not preferences that could have been raised earlier.
+
+## Transition strips
+The packet also has strips of 5 frames 0.2 s apart around every cut and the opening. Check them for: a blank or unfinished first frame, a cut where the old scene and the new one collide or overlap text, text half off-frame while it moves, and a frozen moment. A problem visible only in a strip blocks like any other.

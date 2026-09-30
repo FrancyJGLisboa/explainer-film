@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // review.mjs <film-dir>: build the review packet for the independent reviewer.
-// Two stills per scene (35% and 80% through), with the words on screen and the narration for that scene,
+// Two stills per scene (35% and 80% through), a 5-frame strip around every cut, with the words on screen and the narration for that scene,
 // plus the brief. Output: <film>/qc/review/{NN_scene_a.jpg, NN_scene_b.jpg, packet.md}
 import { createRequire } from 'node:module';
 import { resolve, join } from 'node:path';
@@ -39,6 +39,24 @@ for (const [i, s] of scenes.entries()) {
   }
   md += '\n';
 }
+// transitions: a strip of 5 frames 0.2 s apart around every cut (and the opening), so the reviewer sees the motion, not just held states
+md += `## Transitions (5 frames, 0.2 s apart, left to right)\n\n`;
+const FPS = await page.evaluate(() => window.FPS);
+const cuts = [[0, 'opening'], ...scenes.slice(1).map((s, i) => [s.from, `${scenes[i].name} -> ${s.name}`])];
+for (const [i, [at, label]] of cuts.entries()) {
+  const ts = (at === 0 ? [0, .2, .4, .6, .8] : [-.4, -.2, 0, .2, .4].map(d => at + d));
+  const img = await page.evaluate(({ ts, FPS }) => {
+    const c = document.querySelector('canvas'), k = 360 / c.height, w = Math.round(c.width * k), pad = 8;
+    const o = document.createElement('canvas'); o.width = ts.length * (w + pad) - pad; o.height = 360; const g = o.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, o.width, o.height);
+    ts.forEach((t, j) => { window.draw(Math.round(t * FPS)); g.drawImage(c, j * (w + pad), 0, w, 360); });
+    return o.toDataURL('image/jpeg', .8).split(',')[1];
+  }, { ts, FPS });
+  const name = `t${String(i).padStart(2, '0')}_${label.replace(/\W+/g, '_')}.jpg`;
+  writeFileSync(join(out, name), Buffer.from(img, 'base64'));
+  md += `- \`${name}\`: ${label}, ${ts.map(t => t.toFixed(1) + ' s').join(', ')}\n`; shots.push(name);
+}
+md += '\n';
 await browser.close();
 writeFileSync(join(out, 'packet.md'), md);
 console.log(`review packet: ${scenes.length} scenes, ${shots.length} stills -> ${out}`);

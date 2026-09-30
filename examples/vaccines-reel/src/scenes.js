@@ -101,6 +101,7 @@ function world(t) {
   // 1 hook: a virus copies itself: 1 -> 2 -> 4 -> 8
   if (t < SC.vaccine.from + 1) {
     const out = ease(prog(t, SC.vaccine.from, SC.vaccine.from + .9));
+    for (let i = 0; i < 8; i++) { const [x, y] = vpos(i); circ(x, y - out * H, R * .78, null, [MUTED, 3]); }   // the 8 places the copies will fill, from frame 0: the first frame is a finished picture
     virusCluster(t, -out * H);
     callout('×2 each round', vpos(0)[0], vpos(0)[1] - R * .82 - out * H, vpos(0)[0], V.y + 10 * U - out * H, prog(t, b(2.2), b(2.6)), { bg: WRONG, size: 30 });
   }

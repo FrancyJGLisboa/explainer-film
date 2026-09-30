@@ -107,7 +107,7 @@ PY
     } > "$W/plan-packet.md"
     h=$(hash16 "$d/brief.md")
     echo "reviewing the plan with an independent reviewer (about 1 min)..."
-    CAP=5 sh "$HERE/judge.sh" "$W" "$ROOT/references/plan-reviewer.md" plan-packet.md "$V/plans/$h.json" "$V/plan_$slug" ;;   # plans are cheap: 5 rounds
+    LEDGER="$d/critique.md" LEDGER_KIND=plan CAP=5 sh "$HERE/judge.sh" "$W" "$ROOT/references/plan-reviewer.md" plan-packet.md "$V/plans/$h.json" "$V/plan_$slug" ;;   # plans are cheap: 5 rounds
   review)
     d=$(cd "$1" && pwd); slug=$(basename "$d"); V=$HOME/.cache/explainer-film/verdicts; mkdir -p "$V"
     # the film review needs an approved plan for the current brief (REVIEW_ANYWAY=1 is for calibrating the reviewer only)
@@ -125,7 +125,7 @@ if v.get("approved") and c:
 PY
     h=$(hash16 "$d/piece.html")
     echo "reviewing $(ls "$d/qc/review"/*.jpg | wc -l | tr -d ' ') stills with an independent reviewer (about 1-3 min)..."
-    sh "$HERE/judge.sh" "$d/qc/review" "$ROOT/references/reviewer.md" packet.md "$V/$h.json" "$V/film_$slug" ;;
+    LEDGER="$d/critique.md" LEDGER_KIND=film sh "$HERE/judge.sh" "$d/qc/review" "$ROOT/references/reviewer.md" packet.md "$V/$h.json" "$V/film_$slug" ;;
   render)
     d=$(cd "$1" && pwd); slug=$(basename "$d")
     # hard gate: a film that fails its checks is not finished, so it does not render (a person can override with FORCE=1)

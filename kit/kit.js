@@ -127,7 +127,7 @@ function pill(str, x, y, p, o = {}) {             // small label on its own back
   if (mk && fg == null) fg = mk[2];
   const lumOf = c => { const [r, g2, b3] = rgbOf(hexOf2(c)).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * r + .7152 * g2 + .0722 * b3; };
   const ratio = (a, c) => { const x = lumOf(a), y2 = lumOf(c); return (Math.max(x, y2) + .05) / (Math.min(x, y2) + .05); };
-  if (fg == null || ratio(fg, bg) < 3) fg = ratio(TEXT, bg) >= ratio(DEEP, bg) ? TEXT : DEEP;   // always readable on its own box
+  if (fg == null || ratio(fg, bg) < 4.5) fg = ratio(TEXT, bg) >= ratio(DEEP, bg) ? TEXT : DEEP;   // always readable on its own box
   ctx.save(); ctx.font = font; const w = ctx.measureText(str).width + size * 1.4, h = size * 1.8;
   const x0 = align === 'center' ? x - w / 2 : align === 'right' ? x - w : x;
   ctx.translate(x0 + w / 2, y); ctx.scale(back(p), back(p));

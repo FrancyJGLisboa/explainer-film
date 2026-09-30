@@ -5,6 +5,7 @@
 //  3. corners: no text parked in a corner; no text running off the frame
 //  4. headline length: 8 words max per line
 //  5. text over art: a headline drawn across lines/shapes (not just low contrast)
+//  6b. frame one: frame 0 is a finished picture; still stretch: no more than 2 s without motion
 //  6. frame fill, measured with backdrop AND hero hidden (the explanation alone): share of 40 px cells with anything drawn
 //     counting strong marks only (faint wallpaper doesn't count; thin 3b1b lines do): median >= 8%, no run of 4 s+ below 4%.
 //     Calibrated on real films: passing template 10%; five weak agent films 2-5%.
@@ -26,22 +27,26 @@ let browser; try { browser = await chromium.launch({ channel: 'chrome' }); } cat
 const page = await browser.newPage(); const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 await page.goto('file://' + resolve(file) + '?render');
-const res = await page.evaluate(EVERY => {
+const res = await page.evaluate(([EVERY, MINC]) => {
   const c = document.querySelector('canvas'), x = c.getContext('2d'), W = c.width, H = c.height;
   const lum = (r, g, b) => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }; return .2126 * f(r) + .7152 * f(g) + .0722 * f(b); };
   const hex = h => { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); };
-  const out = { low: {}, corner: {}, off: {}, over: {}, fill: [], unsafe: {} };
+  const out = { motion: [], low: {}, corner: {}, off: {}, over: {}, fill: [], unsafe: {} };
   const S = window.SAFE || { x0: 0, y0: 0, x1: W, y1: H };
   const BGC = hex(window.BG_HEX || '#000000'), dist = (d, i) => Math.abs(d[i] - BGC[0]) + Math.abs(d[i + 1] - BGC[1]) + Math.abs(d[i + 2] - BGC[2]),
         isInk = (d, i) => dist(d, i) > 45, isArt = (d, i) => dist(d, i) > 90;   // faint grids count as fill, not as art under text
-  let lastFill = -1;
+  let lastFill = -1, prevFrame = null;
   window.setHideWords(true);
   for (let t = 0; t * window.FPS < window.FRAMES; t += EVERY) {
     if (window.setHideBackdrop) window.setHideBackdrop(true);
     window.draw(Math.round(t * window.FPS));
     const bare = x.getImageData(0, 0, W, H).data;             // no backdrop: what the film itself draws
     let explain = bare;                                         // no backdrop, no hero: the explanation alone (frame fill)
-    if (window.setHideHero && t - lastFill >= 1 - 1e-9) { window.setHideHero(true); window.draw(Math.round(t * window.FPS)); explain = x.getImageData(0, 0, W, H).data; window.setHideHero(false); }
+    if (window.setHideHero) { window.setHideHero(true); window.draw(Math.round(t * window.FPS)); explain = x.getImageData(0, 0, W, H).data; window.setHideHero(false); }
+    { let n = 0, ch = 0; const cur = new Uint8Array(Math.ceil(H / 6) * Math.ceil(W / 6) * 3);   // motion of the explanation (hero hidden): share of pixels that changed since the last sample
+      for (let y = 0, k = 0; y < H; y += 6) for (let xx = 0; xx < W; xx += 6, k += 3) { const i = (y * W + xx) * 4; cur[k] = explain[i]; cur[k + 1] = explain[i + 1]; cur[k + 2] = explain[i + 2];
+        if (prevFrame) { n++; if (Math.abs(cur[k] - prevFrame[k]) + Math.abs(cur[k + 1] - prevFrame[k + 1]) + Math.abs(cur[k + 2] - prevFrame[k + 2]) > 24) ch++; } }
+      if (prevFrame) out.motion.push([+t.toFixed(2), ch / n]); prevFrame = cur; }
     if (window.setHideBackdrop) { window.setHideBackdrop(false); window.draw(Math.round(t * window.FPS)); }
     if (t - lastFill >= 1 - 1e-9) { lastFill = t; const d = explain, CELL = 40, occ = new Set();
       for (let y = 0; y < H; y += 3) for (let xx = 0; xx < W; xx += 3) if (isArt(d, (y * W + xx) * 4)) occ.add(Math.floor(y / CELL) * 1000 + Math.floor(xx / CELL));
@@ -57,17 +62,21 @@ const res = await page.evaluate(EVERY => {
       if (L.x < -2 || L.y < -2 || L.x + L.w > W + 2 || L.y + L.h > H + 2) (out.off[key] ||= []).push(ts);
       else if (L.x < S.x0 - 2 || L.y < S.y0 - 2 || L.x + L.w > S.x1 + 2 || L.y + L.h > S.y1 + 2) (out.unsafe[key] ||= []).push(ts);
       if (L.own && L.bg && L.col && L.bg.startsWith('#') && L.col.startsWith('#')) { const [a1, a2, a3] = hex(L.col), [b1, b2, b3] = hex(L.bg), la = lum(a1, a2, a3), lb = lum(b1, b2, b3);
-        if ((Math.max(la, lb) + .05) / (Math.min(la, lb) + .05) < 3) (out.low[key] ||= []).push(ts); continue; }
+        if ((Math.max(la, lb) + .05) / (Math.min(la, lb) + .05) < MINC) (out.low[key] ||= []).push(ts); continue; }
       if (L.own || !L.col || !L.col.startsWith('#')) continue;
       const [r0, g0, b0] = hex(L.col), lt = lum(r0, g0, b0);
       const bx = Math.max(0, Math.floor(L.x)), by = Math.max(0, Math.floor(L.y)), bw = Math.min(W - bx, Math.ceil(L.w)), bh = Math.min(H - by, Math.ceil(L.h));
       if (bw <= 0 || bh <= 0) continue;
       const d = x.getImageData(bx, by, bw, bh).data; let n = 0, bad = 0, art = 0;
-      for (let i = 0; i < d.length; i += 4 * 5) { const lb = lum(d[i], d[i + 1], d[i + 2]), ratio = (Math.max(lt, lb) + .05) / (Math.min(lt, lb) + .05); n++; if (ratio < 3) bad++; if (isArt(bareAt(bx, by, bw, i), 0)) art++; }
+      for (let i = 0; i < d.length; i += 4 * 5) { const lb = lum(d[i], d[i + 1], d[i + 2]), ratio = (Math.max(lt, lb) + .05) / (Math.min(lt, lb) + .05); n++; if (ratio < MINC) bad++; if (isArt(bareAt(bx, by, bw, i), 0)) art++; }
       if (n && bad / n > .12) (out.low[key] ||= []).push(ts);
       else if (n && art / n > .008) (out.over[key] ||= []).push(ts);
     }
   }
+  // frame one: the first frame is a finished picture, not a blank or a fade from black (feeds autoplay from frame 0)
+  { if (window.setHideBackdrop) window.setHideBackdrop(true); window.draw(0); const d = x.getImageData(0, 0, W, H).data; const occ = new Set();
+    for (let y = 0; y < H; y += 3) for (let xx = 0; xx < W; xx += 3) if (isArt(d, (y * W + xx) * 4)) occ.add(Math.floor(y / 40) * 1000 + Math.floor(xx / 40));
+    if (window.setHideBackdrop) window.setHideBackdrop(false); out.frame0 = occ.size / (Math.ceil(W / 40) * Math.ceil(H / 40)); }
   // hook: by 1.5 s the viewer must see words AND the explanation starting (scrolling feeds decide in about a second)
   { const f = Math.round(1.5 * window.FPS); if (window.setHideHero) window.setHideHero(true); if (window.setHideBackdrop) window.setHideBackdrop(true);
     window.draw(f); const d = x.getImageData(0, 0, W, H).data; let occ = new Set();
@@ -81,7 +90,7 @@ const res = await page.evaluate(EVERY => {
   out.title = document.title; out.platform = window.PLATFORM_NAME; out.zone = window.ZONE_VISUAL || null;
   out.checks = window.CHECKS;
   return out;
-}, EVERY);
+}, [EVERY, +(process.env.MINC || 4.5)]);
 // the score must actually render: a thrown error here means a silent film
 const score = await page.evaluate(async () => {
   if (typeof window.SCORE !== 'function') return 'no SCORE: the film would be silent';
@@ -92,6 +101,8 @@ await browser.close();
 const span = ts => ts.length > 1 ? `${ts[0]}-${ts[ts.length - 1]}s` : `${ts[0]}s`;
 const fails = [];
 res.checks.forEach(c => fails.push(`storyboard: ${c}`));
+if (res.frame0 < .01) fails.push(`frame one: the first frame is nearly empty (${(res.frame0 * 100).toFixed(1)}% of the frame drawn, backdrop aside; need >= 1%). Feeds autoplay from frame 0 and it is the default thumbnail: open on a finished picture (the first scene's visual already in place, moving), not a blank that fills in`);
+{ let r = []; for (const [t, v] of [...res.motion, [1e9, 1]]) { if (v < .0005) r.push(t); else { if (r.length * EVERY > 2) fails.push(`still stretch: almost nothing moves from ${(r[0] - EVERY).toFixed(2)}s to ${r[r.length - 1]}s (${(r.length * EVERY).toFixed(2)} s). A held key state is fine up to 2 s; beyond that keep it alive: the hero reacts, a highlight travels, a label writes on, a number ticks`); r = []; } } }
 if (res.hook && (res.hook.words === 0 || res.hook.fill < .01)) fails.push(`hook: at 1.5 s the viewer sees ${res.hook.words ? '' : 'no words'}${!res.hook.words && res.hook.fill < .01 ? ' and ' : ''}${res.hook.fill < .01 ? 'almost nothing of the explanation' : ''}; social feeds decide in about a second: put the question on screen and start the picture by 1.5 s`);
 if (score) fails.push(`sound: ${score}`);
 Object.entries(res.low).forEach(([k, ts]) => fails.push(`contrast: "${k}" is hard to read against what is behind it at ${span(ts)}`));
@@ -116,4 +127,4 @@ if (titleWords.length && !titleWords.some(w => screen.includes(w.slice(0, Math.m
 res.words.forEach(s => fails.push(`too long: "${s}" (${s.split(' ').length} words; max 8 per line)`));
 errors.forEach(e => fails.push(`page error: ${e}`));
 if (fails.length) { console.log(fails.join('\n')); console.log(`\n${fails.length} rule failure(s).`); process.exit(1); }
-console.log(`CLEAN: storyboard, claims, contrast, text over art, corners, frame edges, headline length and frame fill (median ${(med * 100).toFixed(0)}%) all pass.`);
+console.log(`CLEAN: storyboard, claims, contrast (4.5:1), text over art, first frame, motion, corners, frame edges, headline length and frame fill (median ${(med * 100).toFixed(0)}%) all pass.`);
