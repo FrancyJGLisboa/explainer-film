@@ -8,7 +8,8 @@ import json, re, subprocess, sys, pathlib, statistics, difflib, tempfile
 d = pathlib.Path(sys.argv[1]).resolve(); slug = d.name
 timing = json.load(open(d / "voice/timing.json")); plan = json.load(open(d / "voice/plan.json"))
 caps = json.load(open(d / "voice/captions.json")) if (d / "voice/captions.json").exists() else []
-lang = (timing.get("lang") or "en-us")[:2]
+nar = json.load(open(d / "src/narration.json")) if (d / "src/narration.json").exists() else {}
+lang = (timing.get("lang") or nar.get("lang") or "en-us")[:2].lower()   # the narration's language picks the model (English-only base.en, else multilingual small)
 ONES = "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen".split()
 TENS = "_ _ twenty thirty forty fifty sixty seventy eighty ninety".split()
 def words_to_num(ws):          # "eighty" -> 80, "three hundred sixty" -> 360, so "$80" and "eighty dollars" compare equal

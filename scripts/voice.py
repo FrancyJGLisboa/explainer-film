@@ -37,7 +37,7 @@ for i, ln in enumerate(spec["lines"]):
     env = [round(min(1, r / top), 2) for r in rms]
     timing.append({"file": f, "scene": ln["scene"], "delay": delay, "dur": round(dur, 3), "text": ln["text"], "env": env})
     need[ln["scene"]] = need.get(ln["scene"], 0) + delay + dur / beat + 0.5    # + half a beat of air after each line
-(out / "timing.json").write_text(json.dumps({"voice": voice, "lines": timing}, indent=1))
+(out / "timing.json").write_text(json.dumps({"voice": voice, "lang": lang, "lines": timing}, indent=1))
 print(f"voice {voice}, {len(timing)} lines, {sum(t['dur'] for t in timing):.1f} s of speech")
 for s, n in need.items():
     print(f"  {s:<14} needs >= {math.ceil(n)} beats")
