@@ -11,6 +11,7 @@
 #   film.sh plan <dir>             independent review of the plan (brief + narration) before any scene code
 #   film.sh review <dir>           independent review: a fresh reviewer (claude CLI, fixed prompt) judges stills of every scene; render needs its approval
 #   film.sh voice <dir>            narrate src/narration.json with Kokoro (free, local) -> voice/*.wav + beats each scene needs
+#   film.sh cast                   who can be cast (the private cast's personalities) and the roles available
 #   film.sh brand "@handle"        set the watermark for every film (off removes it)
 #   film.sh fetch <url> <dir>      an article or a video transcript from a link -> <dir>/source.md
 #   film.sh listen <dir>           speech recognition on the narrated film: lines heard as written, captions in time (render runs it)
@@ -119,6 +120,7 @@ PY
     { echo "# Plan packet: $(sed -n 's#^// TITLE: ##p' "$d/src/head.js")"; echo; cat "$d/brief.md"
       [ -f "$d/src/narration.json" ] && { printf '\n## Narration (src/narration.json)\n\n```json\n'; cat "$d/src/narration.json"; printf '\n```\n'; }
       [ -f "$d/refs/style.md" ] && { printf '\n## Reference style (refs/style.md)\n\n'; cat "$d/refs/style.md"; }
+      grep -q '^## Cast' "$d/brief.md" && { printf '\n## The cast available (for judging the casting)\n\n'; sh "$0" cast; }
     } > "$W/plan-packet.md"
     h=$(hash16 "$d/brief.md")
     echo "reviewing the plan with an independent reviewer (about 1 min)..."
@@ -141,6 +143,13 @@ PY
     h=$(hash16 "$d/piece.html")
     echo "reviewing $(ls "$d/qc/review"/*.jpg | wc -l | tr -d ' ') stills with an independent reviewer (about 1-3 min)..."
     LEDGER="$d/critique.md" LEDGER_KIND=film sh "$HERE/judge.sh" "$d/qc/review" "$ROOT/references/reviewer.md" packet.md "$V/$h.json" "$V/film_$slug" ;;
+  cast)
+    # who can be cast: the private cast's bible (personalities, best cast as) if installed, plus the roles (costumes) available
+    C=${EXPLAINER_CAST:-$HOME/.config/explainer-film/cast}
+    if [ -f "$C/CAST.md" ]; then sed -n '/^| |/,/^$/p' "$C/CAST.md"; sed -n '/^## Rules/,/^## Using/p' "$C/CAST.md" | sed '$d'
+    else echo "No private cast installed: use the plain figure actor('person', ...), recoloured per actor with { body: '#hex' }."; fi
+    echo "Roles (costumes): $(sed -n 's/^  \([a-z]*\): *(S) =>.*/\1/p' "$ROOT/kit/actors.js" | tr '\n' ' ')"
+    echo "New roles for this topic: ROLES.<name> = makeRole({ hat, hatCol, chest, chestCol, mark }) in scenes.js (kit/KIT.md)" ;;
   brand)
     # the watermark on every film: film.sh brand "@handle" (film.sh brand off removes it)
     C=$HOME/.config/explainer-film; mkdir -p "$C"

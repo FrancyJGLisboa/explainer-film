@@ -117,6 +117,7 @@ Harmonies: bright, wistful, dreamy, tense, folk, blues, or your own chords (one 
 |---|---|
 | `actor(name, x, y, s, st)` | draws a character; returns `{handR, handL, hand, head, top}` for the verbs. `st`: `t` (idle mannerisms), `mood`, `look`, `blink`, `talk`, `walk`, `face` (1 / -1), `armL/armR`, `hold` ('L'/'R'), `pointAt` ([x, y]), `waveR`, `role`, `body`, `grow` |
 | `ROLES` | costumes on any body: farmer, trader, scientist, doctor, worker, official, banker, seller, student |
+| `makeRole({hat, hatCol, chest, chestCol, mark})` | a new costume from parts for this topic's roles: `ROLES.judge = makeRole({chest: 'coat', chestCol: '#22252c'})`. hat: brim cap helmet crown beret band top mortar none; chest: sash tie apron badge coat scarf vest none; mark: a 1-2 character symbol |
 | `give(a, b, item, p, o)` | item flies from a's hand to b's (the hands facing each other). `o.after: false` / `o.before: false` when the next or previous verb carries it |
 | `trade(a, b, goods, money, p, o)` | goods a -> b over the top, money b -> a underneath, together. `o.before/after`: false or 'goods' / 'money' |
 | `say(a, text, p, o)` | speech bubble over a's head, typed on |

@@ -28,11 +28,36 @@ const ROLES = {
   scientist: (S) => { rr(-S.headW * .5, S.top + 18, S.headW, 14, 7, '#2b2f3a'); [-1, 1].forEach(k => circ(k * S.headW * .2, S.top + 25, 20, '#bfe6ff', ['#2b2f3a', 6])); },
   doctor:    (S) => { rr(-S.headW * .5, S.top + 20, S.headW, 12, 6, '#e9edf2'); circ(0, S.top + 26, 22, '#dfe7ef', ['#8a96a8', 5]); circ(0, S.top + 26, 8, '#8a96a8'); },
   worker:    (S) => { ctx.save(); ctx.fillStyle = '#f2c230'; ctx.beginPath(); ctx.arc(0, S.top + 8, S.headW * .46, Math.PI, 0); ctx.fill(); ctx.restore(); rr(-S.headW * .6, S.top + 2, S.headW * 1.2, 14, 7, '#e0ad1c'); rr(-6, S.top - S.headW * .44, 12, S.headW * .4, 6, '#e0ad1c'); },
-  official:  (S) => { ctx.save(); ctx.beginPath(); ctx.moveTo(-S.bodyW * .45, S.chestY - 50); ctx.lineTo(S.bodyW * .45, S.chestY + 60); ctx.lineWidth = 22; ctx.strokeStyle = '#7a2e3a'; ctx.stroke(); ctx.restore(); star5(S.bodyW * .12, S.chestY + 6, 16, '#e8c35a'); },
-  banker:    (S) => { tri(0, S.chestY - 40, -24, S.chestY - 56, -24, S.chestY - 24, '#2b2f3a'); tri(0, S.chestY - 40, 24, S.chestY - 56, 24, S.chestY - 24, '#2b2f3a'); circ(0, S.chestY - 40, 7, '#2b2f3a'); },
-  seller:    (S) => { rr(-S.bodyW * .34, S.chestY - 10, S.bodyW * .68, 100, 14, '#f3efe6'); strokeLine([[-S.bodyW * .3, S.chestY - 8], [0, S.chestY - 60], [S.bodyW * .3, S.chestY - 8]], '#f3efe6', 6); },
+  official:  (S) => { makeRole({ chest: 'sash', chestCol: '#7a2e3a' })(S); const B = chestBox(S); star5(0, (B.y0 + B.y1) / 2, 14, '#e8c35a'); },
+  banker:    (S) => { const y = chestBox(S).y0 + 6; tri(0, y, -22, y - 14, -22, y + 14, '#2b2f3a'); tri(0, y, 22, y - 14, 22, y + 14, '#2b2f3a'); circ(0, y, 6, '#2b2f3a'); },
+  seller:    (S) => { const B = chestBox(S), w = Math.min(S.bodyW, 200) * .6; rr(-w / 2, B.y0 + 10, w, B.h - 6, 12, '#f3efe6'); strokeLine([[-w * .45, B.y0 + 12], [0, B.y0 - 16], [w * .45, B.y0 + 12]], '#f3efe6', 5); },
   student:   (S) => { tri(-S.headW * .62, S.top + 2, S.headW * .62, S.top + 2, 0, S.top - 30, '#2b2f3a'); rr(-S.headW * .32, S.top, S.headW * .64, 22, 6, '#2b2f3a'); strokeLine([[S.headW * .45, S.top - 4], [S.headW * .5, S.top + 40]], '#e8c35a', 4); },
 };
+// makeRole({ hat, hatCol, chest, chestCol, mark }): a new costume from parts, for roles the list doesn't have. Register it:
+//   ROLES.judge = makeRole({ hat: 'none', chest: 'coat', chestCol: '#22252c' }); ROLES.pilot = makeRole({ hat: 'cap', hatCol: '#1f3a5f', chest: 'badge' });
+// hat: brim | cap | helmet | crown | beret | band | top | mortar | none;  chest: sash | tie | apron | badge | coat | scarf | vest | none
+const chestBox = S => { const y0 = S.mouthY + 34, y1 = -28; return { y0, y1, h: y1 - y0, w: S.bodyW }; };   // below the mouth, above the feet
+function makeRole({ hat = 'none', hatCol = '#2b2f3a', chest = 'none', chestCol = '#7a2e3a', mark = null } = {}) {
+  return (S) => {
+    const T = S.top, w = S.headW, B = chestBox(S), bw = Math.min(S.bodyW, 200), dk = tint(hatCol, .75), y0 = B.y0, y1 = B.y1, ym = (y0 + y1) / 2;
+    if (hat === 'brim') { ell(0, T + 6, w * .95, 16, 0, hatCol); rr(-w * .42, T - 44, w * .84, 50, 18, tint(hatCol, 1.08)); }
+    if (hat === 'cap') { ctx.save(); ctx.fillStyle = hatCol; ctx.beginPath(); ctx.arc(0, T + 10, w * .44, Math.PI, 0); ctx.fill(); ctx.restore(); ell(w * .42, T + 8, w * .34, 9, 0, dk); }
+    if (hat === 'helmet') { ctx.save(); ctx.fillStyle = hatCol; ctx.beginPath(); ctx.arc(0, T + 8, w * .46, Math.PI, 0); ctx.fill(); ctx.restore(); rr(-w * .6, T + 2, w * 1.2, 14, 7, dk); }
+    if (hat === 'crown') { ctx.fillStyle = hatCol; ctx.beginPath(); ctx.moveTo(-w * .4, T + 6); [-.4, -.2, 0, .2, .4].forEach((k, i) => ctx.lineTo(k * w, T - (i % 2 ? 22 : 48))); ctx.lineTo(w * .4, T + 6); ctx.closePath(); ctx.fill(); }
+    if (hat === 'beret') { ell(-w * .08, T - 2, w * .5, 22, -.15, hatCol); circ(-w * .1, T - 26, 7, dk); }
+    if (hat === 'band') rr(-w * .5, T + 16, w, 14, 7, hatCol);
+    if (hat === 'top') { rr(-w * .3, T - 70, w * .6, 74, 6, hatCol); rr(-w * .5, T - 2, w, 12, 6, hatCol); rr(-w * .3, T - 14, w * .6, 10, 3, tint(hatCol, 1.6)); }
+    if (hat === 'mortar') ROLES.student(S);
+    if (chest === 'sash') { ctx.save(); ctx.beginPath(); ctx.moveTo(-bw * .4, y0); ctx.lineTo(bw * .4, y1); ctx.lineWidth = 18; ctx.strokeStyle = chestCol; ctx.stroke(); ctx.restore(); }
+    if (chest === 'tie') { tri(-11, y0, 11, y0, 0, y0 + 14, chestCol); tri(-12, y0 + 14, 12, y0 + 14, 0, y1 - 4, chestCol); }
+    if (chest === 'apron') ROLES.seller(S);
+    if (chest === 'badge') { circ(bw * .2, ym, 16, chestCol); star5(bw * .2, ym, 10, '#e8c35a'); }
+    if (chest === 'coat') [-1, 1].forEach(k => tri(k * 6, y0, k * bw * .3, y0, k * 6, y1, chestCol));
+    if (chest === 'scarf') { rr(-bw * .34, y0 - 6, bw * .68, 18, 9, chestCol); rr(bw * .1, y0 + 4, 18, Math.min(50, B.h * .8), 8, chestCol); }
+    if (chest === 'vest') [-1, 1].forEach(k => rr(k > 0 ? bw * .06 : -bw * .32, y0, bw * .26, B.h, 10, chestCol));
+    if (mark) { ctx.save(); ctx.font = SANS(26); ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(String(mark).slice(0, 2), 0, ym); ctx.restore(); }   // a short symbol (e.g. '$', '+'), not words
+  };
+}
 function star5(x, y, r, col) { ctx.fillStyle = col; ctx.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? r * .45 : r; ctx.lineTo(x + Math.cos(a) * q, y + Math.sin(a) * q); } ctx.fill(); }
 
 // state: t (for idle mannerisms), mood (plain|happy|sad|think|surprised|worried|excited), look (-1..1), blink, talk (0..1),
