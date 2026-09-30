@@ -33,7 +33,7 @@ const res = await page.evaluate(([EVERY, MINC]) => {
   const c = document.querySelector('canvas'), x = c.getContext('2d'), W = c.width, H = c.height;
   const lum = (r, g, b) => { const f = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }; return .2126 * f(r) + .7152 * f(g) + .0722 * f(b); };
   const hex = h => { h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); };
-  const out = { motion: [], low: {}, corner: {}, off: {}, over: {}, fill: [], unsafe: {} };
+  const out = { cast: {}, castMax: [0, 0], castBig: {}, dupItems: {}, motion: [], low: {}, corner: {}, off: {}, over: {}, fill: [], unsafe: {} };
   const S = window.SAFE || { x0: 0, y0: 0, x1: W, y1: H };
   const BGC = hex(window.BG_HEX || '#000000'), dist = (d, i) => Math.abs(d[i] - BGC[0]) + Math.abs(d[i + 1] - BGC[1]) + Math.abs(d[i + 2] - BGC[2]),
         isInk = (d, i) => dist(d, i) > 45, isArt = (d, i) => dist(d, i) > 90;   // faint grids count as fill, not as art under text
@@ -54,6 +54,10 @@ const res = await page.evaluate(([EVERY, MINC]) => {
       for (let y = 0; y < H; y += 3) for (let xx = 0; xx < W; xx += 3) if (isArt(d, (y * W + xx) * 4)) occ.add(Math.floor(y / CELL) * 1000 + Math.floor(xx / CELL));
       let bx0 = 1e9, by0 = 1e9, bx1 = -1, by1 = -1; for (const k of occ) { const cy = Math.floor(k / 1000), cx = k % 1000; bx0 = Math.min(bx0, cx); bx1 = Math.max(bx1, cx); by0 = Math.min(by0, cy); by1 = Math.max(by1, cy); }
       out.fill.push([+t.toFixed(2), occ.size / (Math.ceil(W / CELL) * Math.ceil(H / CELL)), bx1 < 0 ? null : [bx0 * CELL, by0 * CELL, (bx1 + 1) * CELL, (by1 + 1) * CELL]]); }
+    { const acts = (window.LAYOUT || []).filter(L => L.kind === 'actor' && L.id !== 'wisp'), seen = {};                   // cast on screen, and items drawn twice
+      acts.forEach(A => { out.cast[A.id] = A.col; if (A.s > 1.3) (out.castBig[A.id] ||= []).push(t.toFixed(2)); });
+      if (acts.length > out.castMax[0]) out.castMax = [acts.length, +t.toFixed(2)];
+      (window.LAYOUT || []).filter(L => L.kind === 'item').forEach(L => { if (seen[L.id]) (out.dupItems[L.id] ||= []).push(t.toFixed(2)); seen[L.id] = 1; }); }
     for (const L of window.LAYOUT || []) {
       if (L.kind !== 'text') continue;
       const cx = L.x + L.w / 2, cy = L.y + L.h / 2, key = L.id, ts = t.toFixed(2);
@@ -90,7 +94,7 @@ const res = await page.evaluate(([EVERY, MINC]) => {
   out.allWords = window.getWords();
   out.words = out.allWords.filter(s => s.split(' ').length > 8);
   out.title = document.title; out.platform = window.PLATFORM_NAME; out.zone = window.ZONE_VISUAL || null;
-  out.checks = window.CHECKS; out.brand = window.BRAND_HANDLE; out.music = window.MUSIC_SIG;
+  out.checks = window.CHECKS; out.brand = window.BRAND_HANDLE; out.VAR = typeof VAR !== 'undefined' ? VAR : {}; out.music = window.MUSIC_SIG;
   return out;
 }, [EVERY, +(process.env.MINC || 4.5)]);
 // the score must actually render: a thrown error here means a silent film
@@ -102,6 +106,17 @@ const score = await page.evaluate(async () => {
 await browser.close();
 const span = ts => ts.length > 1 ? `${ts[0]}-${ts[ts.length - 1]}s` : `${ts[0]}s`;
 const fails = [];
+// cast: every character must stand for a real actor in the brief's Cast table; few at once; not a quantity's colour; not blown up
+{ const film = dirname(resolve(file)), names = Object.keys(res.cast).filter(n => n !== 'wisp');
+  const brief = existsSync(join(film, 'brief.md')) ? readFileSync(join(film, 'brief.md'), 'utf8') : '', sec = brief.split(/^## Cast/m)[1] || '';
+  const listed = new Set([...sec.split(/^## /m)[0].matchAll(/^\|\s*\**([A-Za-z]+)/gm)].map(m => m[1].toLowerCase()).filter(w => !['character', 'name'].includes(w)));
+  names.filter(n => !listed.has(n)).forEach(n => fails.push(`cast: "${n}" is on screen but not in brief.md's "## Cast" table (character | plays | the real actor it stands for). A character that stands for nothing is decoration: cut it or add the row`));
+  if (res.castMax[0] > 3) fails.push(`cast: ${res.castMax[0]} characters on screen at ${res.castMax[1]}s; at most 3 at once, so the viewer can follow who does what`);
+  const hx = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16)), dist = (a, b) => hx(a).reduce((s, v, i) => s + Math.abs(v - hx(b)[i]), 0);
+  for (const [n, col] of Object.entries(res.cast)) for (const [k, v] of Object.entries(res.VAR || {})) if (/^#[0-9a-f]{6}$/i.test(col || '') && /^#[0-9a-f]{6}$/i.test(v) && dist(col, v) < 40 && k !== 'gray')
+    fails.push(`cast: ${n}'s colour ${col} is almost VAR.${k} (${v}); colours mean quantities, so retune VAR.${k} in head.js or cast someone else`);
+  Object.entries(res.castBig).forEach(([n, ts]) => fails.push(`cast: ${n} is drawn above scale 1.3 at ${span(ts)}; the explanation, not the cast, fills the frame`));
+  Object.entries(res.dupItems).forEach(([k, ts]) => fails.push(`conservation: the same item (${k.slice(0, 60)}) is drawn twice at ${span(ts)}: one thing, one place. Chain verbs with { after: false } on the first and { before: false } on the next`)); }
 // music variety: this film must not sound like the last film rendered (same kit, chords, key, tempo and patterns)
 { const film = dirname(resolve(file)), slug = basename(film); if (res.music) { mkdirSync(join(film, 'qc'), { recursive: true }); writeFileSync(join(film, 'qc/music.sig'), res.music); }
   const logp = join(homedir(), '.cache/explainer-film/music-log.json'), log = existsSync(logp) ? JSON.parse(readFileSync(logp, 'utf8')) : [];

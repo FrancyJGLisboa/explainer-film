@@ -112,6 +112,21 @@ Harmonies: bright, wistful, dreamy, tense, folk, blues, or your own chords (one 
 | `glow(x, y, r, 'r,g,b', alpha)` | soft light |
 | `ctx.roundRect(...)` | the standard canvas API: works in every browser the renderer uses |
 
+## Actors (kit/actors.js): characters that stand for real actors, and the links between them
+| call | what it does |
+|---|---|
+| `actor(name, x, y, s, st)` | draws a character; returns `{handR, handL, hand, head, top}` for the verbs. `st`: `t` (idle mannerisms), `mood`, `look`, `blink`, `talk`, `walk`, `face` (1 / -1), `armL/armR`, `hold` ('L'/'R'), `pointAt` ([x, y]), `waveR`, `role`, `body`, `grow` |
+| `ROLES` | costumes on any body: farmer, trader, scientist, doctor, worker, official, banker, seller, student |
+| `give(a, b, item, p, o)` | item flies from a's hand to b's (the hands facing each other). `o.after: false` / `o.before: false` when the next or previous verb carries it |
+| `trade(a, b, goods, money, p, o)` | goods a -> b over the top, money b -> a underneath, together. `o.before/after`: false or 'goods' / 'money' |
+| `say(a, text, p, o)` | speech bubble over a's head, typed on |
+| `walkTo(t, t0, t1, x0, x1)` | `{x, walk, face}` for a character walking between two points |
+| `ITEM.crate/coin/cash/doc/box/drop`, `drawItem(item, x, y, s)` | things that change hands: `{kind, col, n, size, id}` (col = the entity's VAR colour) |
+| `registerActor(name, spec)` | add a body: `{col, h, bodyW, path, eye {y, dx, r, rR?, lid?}, mouthY, arm {x, y, len, w}, top, headW, chestY, idle?, pose?, back?, under?, feature?}` |
+
+The kit ships the plain `person`. A private cast lives outside this repo and loads from `~/.config/explainer-film/cast/cast.js`.
+Checks: every character on screen is in the brief's `## Cast` table; at most 3 at once; scale at most 1.3; a character's colour is not a VAR colour; the same item is never drawn twice in one frame.
+
 ## Palette (src/head.js)
 `BG, DEEP, DISC, TEXT, MUTED, THREAD, WRONG, HERO, CARD`, plus `VAR.{blue, yellow, green, gold, red, purple, teal}` (3b1b colours).
 The QC contrast and fill checks read `BG`.

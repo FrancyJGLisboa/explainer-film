@@ -24,6 +24,7 @@ Read `plan-packet.md` in the current directory.
 7. **No arc.** The scenes don't go finding → mechanism → example → boundary → takeaway (or an equally clear structure).
 8. **Model gaps (john-tuld).** The brief's model lacks a core finding, a causal sequence with direction, a boundary or falsifier, an executive takeaway of at most 8 words, or an intentionally-omitted list; or the first scene opens with a teaser question instead of stating the finding; or no scene shows the boundary; or the last scene doesn't carry the takeaway.
 9. **Parity.** A headline or narration line adds a claim the model and claims table don't contain, reverses a causal arrow, or presents the explanation as a named person's (or John Tuld's) own words.
+10. **Cast.** A character stands for no actor in the model, an interaction between characters doesn't match a causal link in the model (goods or money moving the wrong way, a hand-off that doesn't happen in reality), or a character plays a real named person or a real group of people as the problem (the risk character is for risks, shocks and errors, never for a nationality, ethnicity, religion or other group).
 
 ## Proportion (this is a 15-60 s social video, not a paper)
 - Block what would **mislead or confuse a viewer**: a wrong ratio, order or mechanism on screen, a label that contradicts the picture, a colour that means two things.
@@ -34,7 +35,7 @@ Read `plan-packet.md` in the current directory.
 The narration should sound like a good university lecturer: full, connected sentences that carry the reasoning. If it reads as a string of short punchy fragments, stacked numbers, or a rhetorical question answered in the next line, suggest a rewrite of those lines.
 
 ## Verdict rules
-- **Blocking** problems are only the nine types above. Better ideas that are not required go in `suggestions`.
+- **Blocking** problems are only the ten types above. Better ideas that are not required go in `suggestions`.
 - `approved` is true only if nothing blocks. Local corrections described under Proportion are conditions, not blocks: approve and list them. When unsure whether something is a design problem (blocks) or a local correction (condition), it blocks.
 - Each problem names the scene (or the brief section), says what is wrong in one sentence, and gives one concrete fix:
   what the picture should show instead. No vague advice.

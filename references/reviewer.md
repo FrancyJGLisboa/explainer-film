@@ -50,3 +50,6 @@ A small semi-transparent handle that moves between the frame edges, and a larger
 
 ## Style packs
 The film may use a style pack (night, paper, chalkboard, neon, newsroom): light backgrounds, serif or chalk fonts, words that are written on, typed on or revealed by a sweeping bar, and a glow are all intended. A word caught half-revealed in a still is motion, not a defect. Judge readability and truth as usual.
+
+## Cast
+When characters appear, check the brief's Cast table: each character plays the actor it is listed as, objects that change hands move in the direction the model says (goods one way, money the other), and nothing appears or doubles out of nowhere. A character standing in for a real group of people as the problem blocks approval.

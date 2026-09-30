@@ -26,6 +26,14 @@ Before going on, check the model against john-tuld's analytical gates G1–G9 (m
 - Counts or shares shown as a crowd:
 - Equations for tex / texMorph:
 - Narration (voice) or music only:
+- Style (night / paper / chalkboard / neon / newsroom) and music mood:
+
+## Cast (only if the film uses characters; delete otherwise)
+Each character stands for one real actor in the model, and each interaction between them is a real causal link
+(a sale, a hand-off, a signal). At most 3 on screen at once. A character that stands for nothing is cut.
+| character | plays (role) | the real actor it stands for | links (who gives what to whom) |
+|---|---|---|---|
+|  |  |  |  |
 
 ## Reality map (see references/style.md)
 | real thing | on screen | what stays true | test (becomes `shows(...)`) |
