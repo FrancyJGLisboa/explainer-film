@@ -178,7 +178,7 @@ import json, sys, pathlib, time
 d = pathlib.Path(sys.argv[1]); sig = d / "qc/music.sig"; logp = pathlib.Path.home() / ".cache/explainer-film/music-log.json"
 if sig.exists():
     log = json.loads(logp.read_text()) if logp.exists() else []
-    log = [e for e in log if e["slug"] != d.name] + [{"slug": d.name, "sig": sig.read_text(), "at": int(time.time())}]
+    log = [e for e in log if e["slug"] != d.name] + [{"slug": d.name, "dir": str(d), "sig": sig.read_text(), "at": int(time.time())}]
     logp.parent.mkdir(parents=True, exist_ok=True); logp.write_text(json.dumps(log[-20:]))
 PY
     if [ -f "$d/voice/timing.json" ]; then   # narrated: check the finished film by ear

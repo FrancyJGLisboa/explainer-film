@@ -8,14 +8,14 @@
 
 const MOODS = {
   curious: { kit: 'percussion', harmony: 'bright', key: 2, bpm: 96, mel: 'pluck', hat: 'hat8', kick: 'kick2', bass: 'bassHalf', peak: ['kick4', 'clap'], feel: 'light, inquisitive (marimba)' },
-  calm:    { kit: 'keys', harmony: 'dreamy', key: 0, bpm: 84, mel: 'bell', hat: 'hat8', kick: 'kick2', bass: 'bassHalf', peak: ['pluck'], feel: 'soft, reflective (electric piano, strings, bells)' },
+  calm:    { kit: 'keys', harmony: 'dreamy', key: 0, bpm: 84, mel: 'bell', hat: 'hat8', kick: 'kickSoft', bass: 'bassSoft', sfxGain: .35, peak: ['pluck'], feel: 'soft, reflective (electric piano, strings, bells)' },
   warm:    { kit: 'acoustic', harmony: 'folk', key: 0, bpm: 92, mel: 'strum', hat: 'shuffle', kick: 'kick2', bass: 'bassHalf', peak: ['pluck', 'clap'], feel: 'human, handmade (nylon strum, swung shaker)' },
   drive:   { kit: 'electro', harmony: 'wistful', key: 2, bpm: 112, mel: 'arp', hat: 'hat16', kick: 'kick2', bass: 'bass8', peak: ['kick4', 'clap'], feel: 'fast, modern (synth arpeggio, driving bass)' },
   news:    { kit: 'keys', harmony: 'tense', key: 0, bpm: 104, mel: 'pulse', hat: 'hat8', kick: 'kick2', bass: 'bassHalf', peak: ['kick4', 'bell'], feel: 'serious, urgent (ticking pulse, minor chords)' },
   playful: { kit: 'percussion', harmony: 'blues', key: 0, bpm: 104, mel: 'pluck', hat: 'shuffle', kick: 'kick2', bass: 'bassHalf', peak: ['clap', 'lead'], feel: 'cheeky, bouncy (swung marimba)' },
-  wonder:  { kit: 'keys', harmony: 'dreamy', key: 5, bpm: 80, mel: 'arp', hat: 'hat8', kick: 'kick2', bass: 'bassHalf', peak: ['bell'], feel: 'vast, awed (slow arpeggio, bells)' },
+  wonder:  { kit: 'keys', harmony: 'dreamy', key: 5, bpm: 80, mel: 'arp', hat: 'hat8', kick: 'kickSoft', bass: 'bassSoft', sfxGain: .35, peak: ['bell'], feel: 'vast, awed (slow arpeggio, bells)' },
 };
-const EXTRA_LAYERS = ['arp', 'pulse', 'shuffle', 'bell', 'strum'];
+const EXTRA_LAYERS = ['arp', 'pulse', 'shuffle', 'bell', 'strum', 'bassSoft', 'kickSoft'];   // bassSoft: a gentle bass for quiet moods (groove's bass jumps ~14 dB over them)
 
 // SECTIONS for `bars` bars: intro -> melody -> groove -> bass -> peak -> settle -> quiet last bar.
 // Kick and bass never enter together; each step adds one or two layers (the rule that keeps sync-check quiet).
@@ -61,6 +61,10 @@ function buildScore(ac, { dur, bpm, sections, events, ...music }) {
       if (L.includes('bell')) { tone(t, hz(ch[ch.length - 1] + 24), 'sine', .045 * k, .6, 9000); tone(t, hz(ch[ch.length - 1] + 24) * 2.76, 'sine', .012 * k, .25, 9000); }
       if (L.includes('strum')) ch.forEach((m, i) => tone(t + i * .025, hz(m + 12), 'triangle', .05 * k, .45, 4000, (i - 1) * .2));
     }
+    if (L.includes('kickSoft')) [0, 2].forEach(bt => tone(t0 + bt * BEAT, 72, 'sine', .26 * k, .09, 400));   // a felt kick on beats 1 and 3: marks the bar without jumping out
+    if (L.includes('bassSoft')) [0, 2].forEach(bt => { const tb = t0 + bt * BEAT, o = ac.createOscillator(), fl = ac.createBiquadFilter(), g = ac.createGain();
+      o.type = 'triangle'; o.frequency.value = hz(ch[0] - 12); fl.type = 'lowpass'; fl.frequency.value = 500; const pk = .05 * k;
+      g.gain.setValueAtTime(0, tb); g.gain.linearRampToValueAtTime(pk, tb + .08); g.gain.setTargetAtTime(0, tb + BEAT * 1.9, .1); o.connect(fl); fl.connect(g); g.connect(bus); o.start(tb); o.stop(tb + BEAT * 2 + .6); });   // legato: no gap before the next downbeat
     if (L.includes('strum')) ch.forEach((m, i) => tone(t0 + 3.5 * BEAT + i * .02, hz(m + 12), 'triangle', .025 * k, .2, 3000));   // a light upstroke on the and of 4
     prev = L;
   }

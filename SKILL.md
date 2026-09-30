@@ -140,7 +140,7 @@ Use `film.sh stills <dir> 12s,20s` to look closer. Don't render until the check 
 - **STARTLE** (loudness jump > 6 dB): bring the music layers in more gradually around that cut (1–2 new layers per bar, never kick and bass together) or use a softer sfx.
 - **OFF-BEAT** (no strong onset near the cut): first make sure the scene starts on a beat where the drums hit (with `kick2`, the even beats; bar lines are safest). A scene starting between kicks leaves only its sfx to carry the cut. Otherwise the music around it is too thin. Keep a `kick2` (or a pluck and an sfx) going in the bars around that scene start, and put an EVENT exactly on the scene start.
 
-Then render again.
+Then render again. To test music changes fast, render the soundtrack alone: `node scripts/score.mjs <dir>/piece.html /tmp/s.wav` (about 15 s; it also writes /tmp/s.mp4 and /tmp/s.cues.json), then run sync-check on /tmp/s.mp4.
 
 **6b. Listen (narrated films; render runs it).** `film.sh listen <dir>` transcribes the finished film with local Whisper and compares it with the script: each line must be heard as written (≥ 80% match) and the captions must keep time with the voice. A mismatch usually means a word the voice mispronounces: respell it the way it should sound ("A D M", "eighty dollars"), run `film.sh voice`, and render again. The report is `voice/listen.md`.
 

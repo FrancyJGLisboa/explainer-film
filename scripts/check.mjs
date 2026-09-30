@@ -95,7 +95,7 @@ const res = await page.evaluate(([EVERY, MINC]) => {
   out.allWords = window.getWords();
   out.words = out.allWords.filter(s => s.split(' ').length > 8);
   out.title = document.title; out.platform = window.PLATFORM_NAME; out.zone = window.ZONE_VISUAL || null;
-  out.checks = window.CHECKS; out.brand = window.BRAND_HANDLE; out.VAR = typeof VAR !== 'undefined' ? VAR : {}; out.music = window.MUSIC_SIG;
+  out.checks = window.CHECKS; out.brand = window.BRAND_HANDLE; out.scenes = window.SCENE_LIST || []; out.VAR = typeof VAR !== 'undefined' ? VAR : {}; out.music = window.MUSIC_SIG;
   return out;
 }, [EVERY, +(process.env.MINC || 4.5)]);
 // the score must actually render: a thrown error here means a silent film
@@ -121,7 +121,8 @@ const fails = [];
 // music variety: this film must not sound like the last film rendered (same kit, chords, key, tempo and patterns)
 { const film = dirname(resolve(file)), slug = basename(film); if (res.music) { mkdirSync(join(film, 'qc'), { recursive: true }); writeFileSync(join(film, 'qc/music.sig'), res.music); }
   const logp = join(homedir(), '.cache/explainer-film/music-log.json'), log = existsSync(logp) ? JSON.parse(readFileSync(logp, 'utf8')) : [];
-  const last = [...log].reverse().find(e => e.slug !== slug);
+  const parent = dirname(film), chapter = existsSync(join(parent, 'outline.md'));   // chapters of one long film share their music on purpose
+  const last = [...log].reverse().find(e => e.slug !== slug && !(chapter && e.dir && dirname(e.dir) === parent));
   if (res.music && last && last.sig === res.music && !process.env.SAME_MUSIC) fails.push(`music: sounds the same as the last film rendered ("${last.slug}"): same kit, chords, key, tempo and patterns. Pick another mood (MOODS in kit/music.js: ${'curious calm warm drive news playful wonder'}), or change the key or harmony`); }
 res.checks.forEach(c => fails.push(`storyboard: ${c}`));
 if (res.frame0 < .01) fails.push(`frame one: the first frame is nearly empty (${(res.frame0 * 100).toFixed(1)}% of the frame drawn, backdrop aside; need >= 1%). Feeds autoplay from frame 0 and it is the default thumbnail: open on a finished picture (the first scene's visual already in place, moving), not a blank that fills in`);
@@ -137,7 +138,8 @@ const fl = res.fill.map(f => f[1]).sort((a, b) => a - b), med = fl[Math.floor(fl
 if (med < .08) {
   const boxes = res.fill.map(f => f[2]).filter(Boolean), m = i => boxes.map(b => b[i]).sort((a, b) => a - b)[Math.floor(boxes.length / 2)] ?? 0, z = res.zone;
   const where = boxes.length ? ` Your explanation typically sits in x ${m(0)}-${m(2)}, y ${m(1)}-${m(3)}` + (z ? `, but the visual zone for this platform is x ${Math.round(z.x)}-${Math.round(z.x + z.w)}, y ${Math.round(z.y)}-${Math.round(z.y + z.h)} (ZONE.visual): draw the main visual across that whole area.` : '.') : '';
-  fails.push(`frame fill: with the hero hidden, strong marks cover only ${(med * 100).toFixed(0)}% of the frame (need >= 8%).${where} Enlarging the hero or adding faint wallpaper does not count.`);
+  const per = (res.scenes || []).length ? ' Thinnest scenes: ' + res.scenes.map(sc => { const v = res.fill.filter(f => f[0] >= sc.from && f[0] < sc.to).map(f => f[1]).sort((a, b) => a - b); return [sc.name, v.length ? v[Math.floor(v.length / 2)] : 0]; }).sort((a, b) => a[1] - b[1]).slice(0, 3).map(([n, v]) => `${n} ${(v * 100).toFixed(1)}%`).join(', ') + '.' : '';
+  fails.push(`frame fill: with the hero hidden, strong marks cover only ${(med * 100).toFixed(0)}% of the frame (need >= 8%).${where} Enlarging the hero or adding faint wallpaper does not count.${per}`);
 }
 let run = []; for (const [t, v] of [...res.fill, [1e9, 1]]) { if (v < .04) run.push(t); else { if (run.length >= 4) fails.push(`frame fill: nearly empty frames from ${run[0]}s to ${run[run.length - 1]}s`); run = []; } }
 // on topic: at least one content word of the film's title must appear on screen
