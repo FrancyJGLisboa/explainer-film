@@ -505,7 +505,8 @@ function captionChunks() {
   for (const v of VO) {
     const ws = v.text.split(/\s+/).filter(Boolean), wt = ws.map(w => w.replace(/[^\p{L}\p{N}]/gu, '').length + 1.5), tot = wt.reduce((a, c) => a + c, 0);
     let t0 = v.at, chunk = [];
-    ws.forEach((w, i) => { const d = (v.to - v.at) * wt[i] / tot; chunk.push({ w, at: t0, to: t0 + d }); t0 += d;
+    const real = Array.isArray(v.words) && v.words.length === ws.length;   // word timings from the audio (align.py), else shared by length
+    ws.forEach((w, i) => { const d = (v.to - v.at) * wt[i] / tot; if (real) chunk.push({ w, at: v.at + v.words[i][0], to: v.at + v.words[i][1] }); else chunk.push({ w, at: t0, to: t0 + d }); t0 += d;
       if (chunk.length >= 4 || /[.,;:!?…]$/.test(w) && chunk.length >= 2 || i === ws.length - 1) { CAPS.push({ words: chunk, at: chunk[0].at, to: chunk[chunk.length - 1].to }); chunk = []; } });
   }
   return CAPS;

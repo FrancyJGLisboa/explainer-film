@@ -116,7 +116,9 @@ PY
       R=https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0
       curl -sSL -o "$T/kokoro-v1.0.onnx" "$R/kokoro-v1.0.onnx"; curl -sSL -o "$T/voices-v1.0.bin" "$R/voices-v1.0.bin"
     fi
-    "$T/.venv/bin/python" "$HERE/voice.py" "$d" ;;
+    "$T/.venv/bin/python" "$HERE/voice.py" "$d" || exit 1
+    # real word timings for the captions (local Whisper); skipped quietly if it isn't installed yet
+    if "$T/.venv/bin/python" -c "import faster_whisper" 2>/dev/null; then "$T/.venv/bin/python" "$HERE/align.py" "$d"; fi ;;
   reference)
     sh "$HERE/reference.sh" "$1" "$2" ;;
   plan)
