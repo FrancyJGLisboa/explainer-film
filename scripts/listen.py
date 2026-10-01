@@ -4,6 +4,7 @@ Checks (1) each narration line was spoken as written (a mispronounced or garbled
 Needs voice/timing.json, voice/plan.json, voice/captions.json and <slug>.mp4. Runs in the tts venv (film.sh sets it up).
 Exit 1 on a failure; the report is also written to voice/listen.md."""
 import json, re, subprocess, sys, pathlib, statistics, difflib, tempfile
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent)); from numwords import to_digits
 
 d = pathlib.Path(sys.argv[1]).resolve(); slug = d.name
 timing = json.load(open(d / "voice/timing.json")); plan = json.load(open(d / "voice/plan.json"))
@@ -29,7 +30,7 @@ def norm(text):
     t = text.lower().replace("%", " percent ").replace("&", " and ")
     t = re.sub(r"\$(\d[\d,]*)", r"\1 dollars", t); t = re.sub(r"(\d),(\d)", r"\1\2", t)
     t = re.sub(r"[^a-z0-9à-ÿ' ]", " ", t).replace("'", "")
-    return [w for w in words_to_num(t.split()) if w not in ("dollars", "dollar", "uh", "um")]
+    return [w for w in to_digits(t.split(), lang) if w not in ("dollars", "dollar", "uh", "um", "reais", "real")]   # spelled numbers and digits compare equal, PT and EN
 
 audio = pathlib.Path(tempfile.mkdtemp()) / "a.wav"
 subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(d / f"{slug}.mp4"), "-ac", "1", "-ar", "16000", str(audio)], check=True)

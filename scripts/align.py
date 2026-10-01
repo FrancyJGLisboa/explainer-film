@@ -6,6 +6,7 @@ import json, re, sys, difflib
 from pathlib import Path
 import soundfile as sf
 from faster_whisper import WhisperModel
+sys.path.insert(0, str(Path(__file__).resolve().parent)); from numwords import spell
 
 film = Path(sys.argv[1]).resolve(); tp = film / "voice/timing.json"; T = json.loads(tp.read_text())
 lang = (T.get("lang") or "en")[:2].lower()
@@ -17,7 +18,14 @@ for ln in T["lines"]:
     if sr != 16000:
         import numpy as np; idx = np.linspace(0, len(pcm) - 1, int(len(pcm) * 16000 / sr)); pcm = np.interp(idx, np.arange(len(pcm)), pcm).astype("float32")
     segs, _ = model.transcribe(pcm, language=lang, word_timestamps=True, vad_filter=False, beam_size=5)
-    heard = [(w.word.strip(), w.start, w.end) for s in segs for w in s.words]
+    heard = []
+    for sg in segs:
+        for w in sg.words:
+            d = re.sub(r"[^\d]", "", w.word)
+            if d and d == re.sub(r"[^\w]", "", w.word) and len(d) < 7:   # '1963' heard -> the spoken words, sharing the token's time
+                parts = spell(int(d), lang).split(); step = (w.end - w.start) / len(parts)
+                heard += [(p, w.start + k * step, w.start + (k + 1) * step) for k, p in enumerate(parts)]
+            else: heard.append((w.word.strip(), w.start, w.end))
     written = ln["text"].split()
     times = [None] * len(written)
     sm = difflib.SequenceMatcher(None, [norm(w) for w in written], [norm(h[0]) for h in heard], autojunk=False)
