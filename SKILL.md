@@ -128,6 +128,7 @@ Kit parts:
 **5. QC loop (up to 3 rounds).** Run `film.sh check <dir>`. It must exit 0. It checks:
 - collisions and contrast behind text (4.5:1)
 - first frame: frame 0 is a finished picture (≥ 1% of the frame drawn, backdrop aside), since feeds autoplay and thumbnail from it
+- motion: the explanation moves at least 1% at the median and is nearly still at most 30% of the time (a slow camera move per scene, processes that keep running, a presenter who points)
 - still stretches: no more than 2 s where nothing moves (keep a held state alive: the hero reacts, a highlight travels, a number ticks)
 - text over art (lines or shapes crossing a headline)
 - corners and off-frame text

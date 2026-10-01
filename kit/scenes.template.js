@@ -10,12 +10,13 @@ const SC = scenes(                                                 // [name, bea
 const MUSIC = MOODS[MOOD];                                         // or your own: { kit, harmony, key, sfxGain }
 const SECTIONS = musicArc(MOOD, Math.round(DUR / (4 * BEAT)));      // [fromBar, toBar, layers]: builds, peaks, settles; hand-write it to change the arc
 const still = { cx: W / 2, cy: H / 2, k: 1 };
+const drift = t => ({ cx: W / 2 + 26 * Math.sin(t * .23), cy: H / 2 + 8 * Math.sin(t * .31), k: 1.01 + .012 * Math.sin(t * .19) });   // a slow camera that never stops: films that hold still feel dead
 const SHOTS = [                                                    // one camera per scene, contiguous; every cut is a scene start
-  { from: SC.hook.from, to: SC.naive.from, cam: t => ({ ...still, k: 1 + .02 * prog(t, 0, SC.naive.from) }) },
-  { from: SC.naive.from, to: SC.build.from, cam: () => still },
-  { from: SC.build.from, to: SC.insight.from, cam: () => still },
-  { from: SC.insight.from, to: SC.limits.from, cam: () => still },   // no zoom: the whole curve, slow part included, stays in frame
-  { from: SC.limits.from, to: DUR, cam: () => still },
+  { from: SC.hook.from, to: SC.naive.from, cam: drift },
+  { from: SC.naive.from, to: SC.build.from, cam: drift },
+  { from: SC.build.from, to: SC.insight.from, cam: drift },
+  { from: SC.insight.from, to: SC.limits.from, cam: drift },   // a gentle drift only: the whole curve, slow part included, stays in frame
+  { from: SC.limits.from, to: DUR, cam: drift },
 ];
 const EVENTS = [                                                   // [seconds, sfx]: one per visible action, on beats
   [b(1), 'boing'], ...[0, 1, 2, 3, 4].map(g => [b(.4 + g * .4), 'pop']), [SC.naive.from, 'clack'], ...[0, 1, 2, 3, 4, 5, 6, 7].map(i => [b(8 + i * .5), 'popLow', i % 4]),
@@ -58,8 +59,8 @@ function world(t) {
   if (t < SC.naive.from + 1) {
     const out = ease(prog(t, SC.naive.from, SC.naive.from + .8)), gap = Math.min(60 * U, V.w / 16.5), rowH = V.h / 5.2;
     ROWS.forEach((n, g) => { const p = back(prog(t, b(.4 + g * .4), b(.8 + g * .4)));   // all rows up by 1.3 s: feeds decide fast
-      for (let k = 0; k < n; k++) circ(V.x + V.w / 2 + (k - (n - 1) / 2) * gap, V.y + rowH * (g + .5) + out * H, gap * .4, null, [MUTED, 3]);   // empty slots from frame 0: the first frame is a finished picture
-      for (let k = 0; k < n; k++) if (p > 0) circ(V.x + V.w / 2 + (k - (n - 1) / 2) * gap, V.y + rowH * (g + .5) + out * H, gap * .4 * p, VAR.yellow); });
+      for (let k = 0; k < n; k++) circ(V.x + V.w / 2 + (k - (n - 1) / 2) * gap, V.y + rowH * (g + .8) + out * H, gap * .4, null, [MUTED, 3]);   // empty slots from frame 0: the first frame is a finished picture
+      for (let k = 0; k < n; k++) if (p > 0) circ(V.x + V.w / 2 + (k - (n - 1) / 2) * gap, V.y + rowH * (g + .8) + out * H, gap * .4 * p, VAR.yellow); });
   }
   // naive -> mechanism: the same bars, re-grown by a different rule (morph, not a cut)
   if (t > SC.naive.from && t < SC.build.from + 1) {
