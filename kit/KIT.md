@@ -122,6 +122,7 @@ Harmonies: bright, wistful, dreamy, tense, folk, blues, or your own chords (one 
 | `trade(a, b, goods, money, p, o)` | goods a -> b over the top, money b -> a underneath, together. `o.before/after`: false or 'goods' / 'money' |
 | `say(a, text, p, o)` | speech bubble over a's head, typed on |
 | `walkTo(t, t0, t1, x0, x1)` | `{x, walk, face}` for a character walking between two points |
+| `named(fn, id)` | gives a drawing function its own identity: two coins drawn by one function at once need different names, or the conservation check reads them as one item drawn twice |
 | `ITEM.crate/coin/cash/doc/box/drop`, `drawItem(item, x, y, s)` | things that change hands: `{kind, col, n, size, id}` (col = the entity's VAR colour) |
 | `registerActor(name, spec)` | add a body: `{col, h, bodyW, path, eye {y, dx, r, rR?, lid?}, mouthY, arm {x, y, len, w}, top, headW, chestY, idle?, pose?, back?, under?, feature?, skin?, hand?, browCol?}`. Human bodies: `skin` colours eyelids, `hand` the hands, `browCol` the brows; `back` draws legs behind the torso, `under` the head, `feature` glasses and beards |
 

@@ -158,13 +158,27 @@ Then render again. To test music changes fast, render the soundtrack alone: `nod
 
 **7. Deliver.**
 - Write `README.md` in the film folder from `references/readme.template.md` (with narration, add the voice name and the lines).
-- `open` the mp4.
+- Play it with `film.sh play <dir>` (opens it unmuted at full volume; a plain `open` can land in a muted player).
 - Tell the user in a few lines: what it shows, what was checked, and anything dropped for lack of a source.
 
 ## Keep going (failing is normal; quitting early is not)
 - A failing check or a rejection is the normal middle of the job, not a reason to stop. Redesigning a scene (bigger visual, new layout, words moved to the empty band) is ordinary work: do it.
 - Work the failures in this order: fill and layout first (make the explanation big: one large labelled diagram per scene, built from the template's composition), then words over art, then claim tests, then everything else.
 - Only stop and report when (a) the reviewer has rejected the film 3 times (the script stops you), or (b) 8 rounds of `film.sh check` have made no progress on the same failure. Then report exactly what still fails.
+
+## Known pitfalls (each one happened, and each is now guarded: if a guard fires, fix the cause, never work around it)
+| what went wrong | what catches it now | what to do |
+|---|---|---|
+| a `//` comment put in the middle of a line silently disabled the code after it | lint ("swallowed code") and the build's syntax check | comments only at the end of a line |
+| a scene name clashed with a kit name (`INK`, `named`) | build check: "Identifier ... already declared" | rename yours; read kit/KIT.md for kit names |
+| the film listed what it leaves out ("not covered") | lint ("omission line"), screen and narration | omissions stay in the brief only |
+| the film felt static (still 30–76% of the time) | check: motion | a camera move per scene, processes that keep running, a presenter who points |
+| two scenes on screen at once; coins or bubbles over faces or digits | reviewer's transition strips and stills | exit before the cut; keep moving things above heads and away from labels |
+| an anonymous drawing function used for two things at once looked like one item drawn twice | check: conservation (its message says how) | `named(fn, 'coin ' + i)` |
+| quiet-mood music jumped 14 dB at cuts | sync-check (STARTLE); the kit's soft bass and kick | test music fast with `scripts/score.mjs`, then soften the cut sound |
+| the listen check judged Portuguese with the English model, and spelled-out numbers ("mil novecentos...") with digits | fixed in listen.py, numwords.py and align.py | nothing: write numbers as words in the narration if the voice misreads digits |
+| captions drifted with a human-paced voice | captions are timed from the audio (align.py, run by `film.sh voice`) | rerun `film.sh voice` after changing narration |
+| the finished film played silent (QuickTime muted) | `film.sh play` opens it unmuted | always deliver with `film.sh play` |
 
 ## Hard rules
 - **A film is not done while any check fails.** `film.sh render` refuses to run until `film.sh check` passes. Never set FORCE=1 yourself (it is for a person), and never report a film as finished with failures.

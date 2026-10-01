@@ -25,4 +25,20 @@ TITLE=$(sed -n 's#^// TITLE: ##p' "$F/src/head.js" | head -1)
   cat "$G"
   sed -n '300,$p' "$S"
 } > "$F/piece.html"
+# syntax check of the whole page script (catches a comment that swallowed code, and names that clash with the kit, e.g. INK)
+NODE=$(command -v node || echo "$HOME/.local/node/bin/node")
+if [ -x "$NODE" ] || command -v node >/dev/null; then
+  python3 - "$F/piece.html" > "$F/.page-script.js" <<'PY'
+import re, sys
+html = open(sys.argv[1]).read(); blocks = re.findall(r"<script[^>]*>(.*?)</script>", html, re.S)
+print(max(blocks, key=len) if blocks else "")
+PY
+  if ! err=$("$NODE" --check "$F/.page-script.js" 2>&1); then
+    ln=$(echo "$err" | sed -n 's/.*page-script.js:\([0-9]*\).*/\1/p' | head -1)
+    echo "BUILD FAILED: the film's code has a syntax error: $(echo "$err" | grep -E "Error" | head -1)"
+    [ -n "$ln" ] && echo "  at: $(sed -n "${ln}p" "$F/.page-script.js" | cut -c1-160)"
+    echo "  (a // comment in the middle of a line, or a name already used by the kit, are the usual causes)"; rm -f "$F/.page-script.js"; exit 1
+  fi
+  rm -f "$F/.page-script.js"
+fi
 echo "built $F/piece.html"

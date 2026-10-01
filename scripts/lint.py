@@ -4,6 +4,15 @@ the film's world(t) also uses (the function or data it draws from). Line breaks 
 import re, sys
 src = open(sys.argv[1]).read()
 code = re.sub(r"//[^\n]*", "", src)                      # drop line comments
+# a // comment after code can swallow the code that follows it on the same line (it happened again and again):
+# flag inline comments whose text contains a statement like  name(...);  or  });  or  ctx.something(
+swallowed = []
+for n, line in enumerate(src.split("\n"), 1):
+    q = re.sub(r"(['\"`])(?:\\.|(?!\1).)*\1", "''", line)                # ignore // inside strings
+    if "//" not in q or not q.split("//", 1)[0].strip(): continue
+    tail = q.split("//", 1)[1]
+    if re.search(r"[A-Za-z_]\w*\([^()]*\)\s*;|\}\s*\)\s*;|\bctx\.\w+\(|\bconst\s+\w+\s*=", tail):
+        swallowed.append(f"line {n}: code after a // comment never runs: ...//{tail.strip()[:90]}")
 code = re.sub(r"/\*.*?\*/", "", code, flags=re.S)
 
 def balanced(s, i, o="(", c=")"):
@@ -56,6 +65,22 @@ for mm in re.finditer(r"\bshows\s*\(", code):
         bad.append(f"{label}: condition `{cond}` is a constant (or only scene timings, which say nothing about the picture)")
     elif not ids & world_ids:
         bad.append(f"{label}: condition `{cond}` uses nothing that world() draws ({', '.join(sorted(ids))})")
+# the creator's rule: films never list what they leave out (on screen or in the narration)
+import json as _json, os as _os
+OMIT = re.compile(r"not covered|não abordad|nao abordad|não coberto|fora do vídeo|left out of this|no cubiert", re.I)
+omits = [f"scenes.js line {n}: {l.strip()[:90]}" for n, l in enumerate(src.split("\n"), 1) if OMIT.search(re.sub(r"//.*$", "", l))]
+_nar = _os.path.join(_os.path.dirname(_os.path.abspath(sys.argv[1])), "narration.json")
+if _os.path.exists(_nar):
+    omits += [f"narration ({ln.get('scene')}): {ln.get('text', '')[:90]}" for ln in _json.load(open(_nar)).get("lines", []) if OMIT.search(ln.get("text", ""))]
+if omits:
+    print("omission line: films don't list what they leave out (keep it in the brief only). Remove:")
+    print("\n".join("  " + x for x in omits))
+    if not bad and not swallowed: sys.exit(1)
+if swallowed:
+    print("swallowed code: a // comment sits in front of code on the same line, so that code is ignored. Put the comment at the end of the line:")
+    print("\n".join("  " + x for x in swallowed))
+    if not bad: sys.exit(1)
+if omits and (bad or swallowed): pass
 if bad:
     print("fake claim test: each shows() must compute its condition from the numbers the picture is drawn from:")
     print("\n".join("  " + x for x in bad)); sys.exit(1)

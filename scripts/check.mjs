@@ -117,7 +117,7 @@ const fails = [];
   for (const [n, col] of Object.entries(res.cast)) for (const [k, v] of Object.entries(res.VAR || {})) if (/^#[0-9a-f]{6}$/i.test(col || '') && /^#[0-9a-f]{6}$/i.test(v) && dist(col, v) < 40 && k !== 'gray')
     fails.push(`cast: ${n}'s colour ${col} is almost VAR.${k} (${v}); colours mean quantities, so retune VAR.${k} in head.js or cast someone else`);
   Object.entries(res.castBig).forEach(([n, ts]) => fails.push(`cast: ${n} is drawn above scale 1.3 at ${span(ts)}; the explanation, not the cast, fills the frame`));
-  Object.entries(res.dupItems).forEach(([k, ts]) => fails.push(`conservation: the same item (${k.slice(0, 60)}) is drawn twice at ${span(ts)}: one thing, one place. Chain verbs with { after: false } on the first and { before: false } on the next`)); }
+  Object.entries(res.dupItems).forEach(([k, ts]) => fails.push(`conservation: the same item (${k.slice(0, 60)}) is drawn twice at ${span(ts)}: one thing, one place. Chain verbs with { after: false } on the first and { before: false } on the next. If these are two different things drawn by the same function, name each one: give(a, b, named(drawCoin, 'coin ' + i), p)`)); }
 // music variety: this film must not sound like the last film rendered (same kit, chords, key, tempo and patterns)
 { const film = dirname(resolve(file)), slug = basename(film); if (res.music) { mkdirSync(join(film, 'qc'), { recursive: true }); writeFileSync(join(film, 'qc/music.sig'), res.music); }
   const logp = join(homedir(), '.cache/explainer-film/music-log.json'), log = existsSync(logp) ? JSON.parse(readFileSync(logp, 'utf8')) : [];

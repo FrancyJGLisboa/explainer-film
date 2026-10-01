@@ -132,6 +132,9 @@ const ITEM = {
   box:   (x, y, s, col = VAR.blue) => { rr(x - 24 * s, y - 24 * s, 48 * s, 48 * s, 8 * s, col); },
   drop:  (x, y, s, col = VAR.blue) => { ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(x, y - 26 * s); ctx.quadraticCurveTo(x + 22 * s, y, x, y + 16 * s); ctx.quadraticCurveTo(x - 22 * s, y, x, y - 26 * s); ctx.fill(); },
 };
+// named(fn, id): give a drawing function its own identity, so two different things drawn by the same function
+// (two coins in flight at once) are not mistaken for one item drawn twice by the conservation check
+const named = (fn, id) => Object.defineProperty((...a) => fn(...a), 'name', { value: id });
 function drawItem(it, x, y, s) { LAYOUT.push({ kind: 'item', id: typeof it === 'function' ? it.name || 'item' : (it.id || JSON.stringify(it)), x, y, w: 1, h: 1 });   // check: one thing, one place per frame
   if (typeof it === 'function') return it(x, y, s); const n = it.n || 1; for (let i = 0; i < n; i++) ITEM[it.kind](x + (i - (n - 1) / 2) * 20 * s, y - i * 4 * s, s * (it.size || 1), it.col); }
 const nearHand = (a, b) => { const tx = (b.head || b.hand)[0]; return Math.abs(a.handR[0] - tx) <= Math.abs(a.handL[0] - tx) ? a.handR : a.handL; };   // the hand facing the partner

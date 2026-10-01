@@ -13,6 +13,7 @@
 #   film.sh review <dir>           independent review: a fresh reviewer (claude CLI, fixed prompt) judges stills of every scene; render needs its approval
 #   film.sh voice <dir>            narrate src/narration.json with Kokoro (free, local) -> voice/*.wav + beats each scene needs
 #   film.sh cast                   who can be cast (the private cast's personalities) and the roles available
+#   film.sh play <dir>             play the finished film with sound (QuickTime, unmuted)
 #   film.sh brand "@handle"        set the watermark for every film (off removes it)
 #   film.sh fetch <url> <dir>      an article or a video transcript from a link -> <dir>/source.md
 #   film.sh listen <dir>           speech recognition on the narrated film: lines heard as written, captions in time (render runs it)
@@ -158,6 +159,20 @@ PY
     else echo "No private cast installed: use the plain figure actor('person', ...), recoloured per actor with { body: '#hex' }."; fi
     echo "Roles (costumes): $(sed -n 's/^  \([a-z]*\): *(S) =>.*/\1/p' "$ROOT/kit/actors.js" | tr '\n' ' ')"
     echo "New roles for this topic: ROLES.<name> = makeRole({ hat, hatCol, chest, chestCol, mark }) in scenes.js (kit/KIT.md)" ;;
+  play)
+    # play the finished film with sound: QuickTime keeps its own per-window mute and volume, which once hid the audio
+    d=$(cd "$1" && pwd); f=$(ls -t "$d"/*.youtube.mp4 "$d"/*.linkedin.mp4 "$d"/*.reels.mp4 "$d"/*.tiktok.mp4 "$d"/*.shorts.mp4 "$d"/*.instagram.mp4 "$d"/*.square.mp4 "$d"/*.x.mp4 "$d"/$(basename "$d").mp4 2>/dev/null | head -1)
+    [ -n "$f" ] || { echo "no rendered film in $d"; exit 1; }
+    if command -v osascript >/dev/null; then osascript -e "tell application \"QuickTime Player\"
+      activate
+      open POSIX file \"$f\"
+      delay 1
+      set d to document 1
+      set muted of d to false
+      set audio volume of d to 1.0
+      set current time of d to 0
+      play d
+    end tell" >/dev/null && echo "playing $f (QuickTime, unmuted, full volume)"; else open "$f"; fi ;;
   brand)
     # the watermark on every film: film.sh brand "@handle" (film.sh brand off removes it)
     C=$HOME/.config/explainer-film; mkdir -p "$C"
