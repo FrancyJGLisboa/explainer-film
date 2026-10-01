@@ -53,3 +53,6 @@ The film may use a style pack (night, paper, chalkboard, neon, newsroom): light 
 
 ## Cast
 When characters appear, check the brief's Cast table: each character plays the actor it is listed as, objects that change hands move in the direction the model says (goods one way, money the other), and nothing appears or doubles out of nowhere. A character standing in for a real group of people as the problem blocks approval.
+
+## Omissions
+The film does not list what it leaves out. A "not covered" / "não abordado" line is not required; if one appears, suggest removing it.

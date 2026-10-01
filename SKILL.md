@@ -71,7 +71,7 @@ A second worked example is `examples/how-ai-learns/` (made before the kit existe
   - The first scene **states the core finding**, not a teaser question.
   - The boundary gets its own scene.
   - The last scene shows the **executive takeaway verbatim** (≤ 8 words; `film.sh check` looks for it).
-  - The intentionally omitted items are stated briefly on screen or in the narration.
+  - The intentionally omitted items stay in the brief only: they keep the model honest while planning, but the film never lists what it leaves out (no "not covered" lines on screen or in the narration).
 - **Hunch:** research the mechanism first. If facts or numbers matter, use web search, and prefer primary sources.
 - **Transcript:** condense to its 1 core idea and 6–8 beats. Keep the speaker's claims and add none of your own.
 - **Reality map:** for every picture, record the real thing → what's on screen → what stays true → **test** (`references/style.md`). A picture with no "what stays true" gets cut. The test is a check the code can run on the numbers it draws, like "ends ≥ 5× steeper than it starts" (`bend`) or "each row doubles". It becomes a `shows(...)` line in scenes.js.

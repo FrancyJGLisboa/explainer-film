@@ -15,7 +15,7 @@
 - **Hero transformation** (the one on-screen transformation that best teaches the mechanism):
 - **Executive takeaway:** (one sentence, at most 8 words, that a viewer can repeat accurately; the last scene shows it verbatim)
 - **Forbidden misinterpretations** (readings the picture must not allow):
-- **Intentionally omitted** (what the film leaves out, stated briefly on screen or in the narration):
+- **Intentionally omitted** (what the film leaves out; for planning only, never shown or said in the film):
 
 Before going on, check the model against john-tuld's analytical gates G1–G9 (mechanism identified, distinctions kept, truth status separated, uncertainty preserved, causal chain coherent, compression faithful, concrete test passed, limits exposed). If the john-tuld skill is installed, its `references/gates.md` has the full wording.
 
